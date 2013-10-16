@@ -13,6 +13,7 @@ namespace RTS
 		private int m_selectionType;
 		private GameObject m_cursorBuilding;
 		private Vector3 m_cursorOffset;
+		private int m_refund;
 		
 		public void InitInput()
 		{
@@ -24,6 +25,10 @@ namespace RTS
 		
 		public void ProcessInput()
 		{
+			Vector2 mousePos = Input.mousePosition;
+			if (mousePos.x > Screen.width * .875f || mousePos.x < 0 || mousePos.y < 0 || mousePos.y > Screen.height)
+				return;
+			
 			switch(m_cursorMode)
 			{
 			case Cursor.ORDER:			
@@ -49,7 +54,7 @@ namespace RTS
 					// Raycast first half of rectangle.
 					m_clickPos = new Vector3(Input.mousePosition.x, Screen.height, 0.0f) - new Vector3(0.0f, Input.mousePosition.y, 0.0f);
 					m_ray1 = camera.ScreenPointToRay(Input.mousePosition);
-					Physics.Raycast(m_ray1, out m_hit1, 10000.0f);
+					Physics.Raycast(m_ray1, out m_hit1, 5000.0f, 1 << 8 | 1 << 10);
 				}
 				if (Input.GetMouseButtonUp(0))
 				{	
@@ -57,7 +62,7 @@ namespace RTS
 					
 					// Raycast second half of rectangle.
 					m_ray2 = camera.ScreenPointToRay(Input.mousePosition);
-					if (Physics.Raycast(m_ray2, out m_hit2, 10000.0f))
+					if (Physics.Raycast(m_ray2, out m_hit2, 5000.0f, 1 << 8 | 1 << 10))
 					{
 						// Determine if it's a rectangular selection.
 						if (Mathf.Abs(Vector2.Distance(m_hit1.point, m_hit2.point)) > 1.0f)
@@ -126,12 +131,8 @@ namespace RTS
 					{
 						if (m_cursorBuilding.GetComponent<GhostBuilding>().Placeable())
 						{
-							Destroy(m_cursorBuilding);
-							m_cursorOffset = Vector3.zero;
-							m_selectionType = Selection.BUILDING;
-							m_cursorMode = Cursor.ORDER;
 							CreateBuilding("ConstructionYard", m_cursorBuilding.transform.position, m_cursorBuilding.transform.eulerAngles);
-							
+							ClearCursor();
 							break;
 						}
 					}
@@ -141,6 +142,11 @@ namespace RTS
 						Vector3 rot = m_cursorBuilding.transform.eulerAngles;
 						float input = (Input.GetAxis("Mouse X") + Input.GetAxis("Mouse Y")) * 5f;
 						m_cursorBuilding.transform.eulerAngles = new Vector3(rot.x, rot.y + input, rot.z);
+					}
+					else if (Input.GetMouseButton(1))
+					{
+						m_res.funds += m_refund;
+						ClearCursor();
 					}
 					else
 					{
@@ -167,6 +173,17 @@ namespace RTS
 			}
 		}
 		
+		// Remove ghost building information.
+		void ClearCursor()
+		{
+			Destroy(m_cursorBuilding);
+			m_cursorOffset = Vector3.zero;
+			m_selectionType = Selection.BUILDING;
+			m_cursorMode = Cursor.ORDER;
+			m_refund = 0;
+		}
+		
+		// Clear selection and revert to unit selection mode.
 		void ClearSelection()
 		{
 			// Deselect all selected entities.

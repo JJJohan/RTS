@@ -28,7 +28,7 @@ namespace RTS
 			//CreateBuilding("ConstructionYard", new Vector3(20,5,3));
 			
 			m_cursorMode = Cursor.BUILD;
-			CreateBuildingGhost("ConstructionYard");
+			CreateBuildingGhost("ConstructionYard");		
 			
 			//////////
 		}
@@ -79,7 +79,6 @@ namespace RTS
 				if (building.Cost() <= m_res.funds)
 				{
 					// Update available resources.
-					m_res.funds -= building.Cost();
 					m_res.powerUsed += building.Power();
 					
 					// Create the building.

@@ -7,12 +7,14 @@ namespace RTS
 		private Texture2D m_guiPanel;
 		private Texture2D m_guiSelect;
 		private GUIStyle m_gui;
+		private Material m_minimap;
 		
 		void InitGUI()
 		{
 			// RTS Panel
 			m_guiPanel = (Texture2D)UnityEngine.Resources.Load("Textures/panel");
 			m_guiSelect = (Texture2D)UnityEngine.Resources.Load("Textures/gray");
+			m_minimap = (Material)UnityEngine.Resources.Load("textures/minimapRT");
 			
 			// GUI Style
 			m_gui = new GUIStyle();
@@ -30,15 +32,16 @@ namespace RTS
 				Vector3 mousePos = new Vector3(Input.mousePosition.x, Screen.height, 0.0f) - new Vector3(0.0f, Input.mousePosition.y, 0.0f);
 				GUI.DrawTexture(new Rect(m_clickPos.x, m_clickPos.y, mousePos.x - m_clickPos.x, mousePos.y - m_clickPos.y), m_guiSelect);
 			}
-			
+				
 			// Draw scaled GUI.
 		    GUI.DrawTexture(ResizeGUI(new Rect(1920 - 240, 0, 240, 1080)), m_guiPanel);
+			Graphics.DrawTexture(ResizeGUI(new Rect(1920 - 224, 16, 209, 184)), m_minimap.mainTexture, m_minimap);
 			
 			// Draw power available / required.
-			GUI.TextArea(ResizeGUI(new Rect(1920 - 225, 265, 209, 27)), ((int)m_res.powerUsed).ToString() + "/" + ((int)m_res.power).ToString(), m_gui);
+			GUI.Label(ResizeGUI(new Rect(1920 - 225, 265, 209, 27)), ((int)m_res.powerUsed).ToString() + "/" + ((int)m_res.power).ToString(), m_gui);
 			
 			// Draw available funds.
-			GUI.TextArea(ResizeGUI(new Rect(1920 - 225, 365, 209, 27)), ((int)m_res.funds).ToString(), m_gui);
+			GUI.Label(ResizeGUI(new Rect(1920 - 225, 365, 209, 27)), ((int)m_res.funds).ToString(), m_gui);
 		}
 		 
 		Rect ResizeGUI(Rect _rect)

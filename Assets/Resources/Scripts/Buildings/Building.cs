@@ -22,10 +22,12 @@ namespace RTS
 		protected Vector3 m_offset;
 		protected Vector3 m_bounds;
 		protected Vector3 m_placeBounds;
+		protected Vector2 m_miniSize;
 		private TextMesh m_text;
 		private GameObject m_ghost;
 		private BoxCollider m_collider;
 		private bool m_destroyed;
+		private GameObject m_miniIcon;
 		
 		// Functions
 		public float Health { get; set; }
@@ -46,6 +48,15 @@ namespace RTS
 			m_collider = gameObject.AddComponent<BoxCollider>();
 			m_collider.size = m_bounds;
 			m_destroyed = false;
+			gameObject.layer = 10;
+			
+			// Create minimap icon
+			m_miniIcon = GameObject.CreatePrimitive(PrimitiveType.Plane);
+			m_miniIcon.renderer.material = new Material(Shader.Find("Self-Illumin/Diffuse"));
+			m_miniIcon.renderer.material.color = Color.blue;
+			m_miniIcon.transform.localScale = new Vector3(m_miniSize.x, 1f, m_miniSize.y);
+			m_miniIcon.layer = 9;
+			m_miniIcon.transform.position = transform.position + new Vector3(0,50,0);
 		}
 		
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
@@ -151,6 +162,7 @@ namespace RTS
 				m_ghost.renderer.material.color = new Color(0f, 1f, 0f, 0.5f);
 			
 			gameObject.renderer.material.color = Color.green;
+			m_miniIcon.renderer.material.color = Color.white;
 			
 			// TODO: Play selection sound.
 		}
@@ -161,6 +173,7 @@ namespace RTS
 				m_ghost.renderer.material.color = new Color(1f, 1f, 1f, 0.5f);
 				
 			gameObject.renderer.material.color = Color.white;
+			m_miniIcon.renderer.material.color = Color.blue;
 		}
 		
 		public void OnDestroy()
@@ -173,6 +186,9 @@ namespace RTS
 			
 			if (m_text)
 				Destroy(m_text.gameObject);
+			
+			if (m_miniIcon)
+				Destroy(m_miniIcon);
 		}
 	}
 }

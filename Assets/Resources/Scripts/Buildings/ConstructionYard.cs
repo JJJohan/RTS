@@ -15,8 +15,9 @@ namespace RTS
 			m_cameo = m_cameoResource;
 			m_textPos = new Vector3(0f, 10f, 0f);
 			m_offset = new Vector3(0f, 5f, 0f);
-			m_bounds = new Vector3(1.5f, 2f, 1.5f);
+			m_bounds = new Vector3(1.5f, 2f, 1.15f);
 			m_placeBounds = new Vector3(1.0f, 0.9f, 1.0f);
+			m_miniSize = new Vector2(6f, 6f);
 		}
 	}
 }
