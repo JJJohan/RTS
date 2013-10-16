@@ -66,43 +66,35 @@ namespace RTS
 		{
 			if (!m_built && !m_repairing)
 			{
-				float cost = (m_cost * Time.deltaTime / m_buildTime);
-				if (a_res.funds > cost)
+				// Increment build percentage.
+				m_buildPercent += Time.deltaTime;
+				
+				// Delete building assets when finished.
+				if (m_buildPercent > (float)m_buildTime)
 				{
-					m_spent += cost;
-					m_buildPercent += Time.deltaTime;
-					a_res.funds -= cost;
-						
-					if (m_buildPercent > (float)m_buildTime)
-					{
-						Destroy(m_text.gameObject);
-						Destroy (m_ghost);
-						m_built = true;
-						m_buildPercent = m_buildTime;
-						m_spent = Mathf.Ceil(m_spent);
-						a_res.funds += m_spent - m_cost;
-						m_spent = 0;
-					}
-					
-					float offset = ((m_buildTime - m_buildPercent) / m_buildTime) * 10;
-					transform.position = m_position - new Vector3(0f, offset, 0f);
-					
-					if (m_text)
-					{
-						m_text.transform.LookAt(m_text.transform.position * 2 - Camera.main.transform.position);
-						m_text.transform.eulerAngles = new Vector3(0f, m_text.transform.eulerAngles.y, m_text.transform.eulerAngles.z);
-						//m_text.transform.position = m_position + new Vector3(m_textPos.x, -offset + m_textPos.y, m_textPos.z);
-						m_text.text = ((int)(((m_buildPercent / m_buildTime) * 100) + .5f)).ToString() + "%";
-					}
+					Destroy(m_text.gameObject);
+					Destroy(m_ghost);
+					m_built = true;
+					m_buildPercent = m_buildTime;
 				}
-				else
+				
+				// Update building position based on completion percentage.
+				float offset = ((m_buildTime - m_buildPercent) / m_buildTime) * 10;
+				transform.position = m_position - new Vector3(0f, offset, 0f);
+				
+				// Update percentage text.
+				if (m_text)
 				{
-					// TODO: Insufficient funds warning.
+					m_text.transform.LookAt(m_text.transform.position * 2 - Camera.main.transform.position);
+					m_text.transform.eulerAngles = new Vector3(0f, m_text.transform.eulerAngles.y, m_text.transform.eulerAngles.z);
+					m_text.text = ((int)(((m_buildPercent / m_buildTime) * 100) + .5f)).ToString() + "%";
 				}
 			}
 			
+			// Repair building.
 			if (m_repairing && m_health < m_totalHealth)
 			{
+				// Ensure sufficient funds.
 				int cost = (int)(m_cost * Time.deltaTime * .25f);
 				if (a_res.funds > cost)
 				{
@@ -113,15 +105,16 @@ namespace RTS
 						m_repairing = false;
 						m_health = m_totalHealth;
 					}
-					
-					float percent = m_health / m_totalHealth;
-					gameObject.renderer.material.color = new Color(percent, percent, percent);
 				}
 				else
 				{
 					// TODO: Insufficient funds warning.
 				}
 			}
+			
+			// Update colour based on health.
+			float percent = m_health / m_totalHealth;
+			gameObject.renderer.material.color = new Color(percent, percent, percent);
 		}
 		
 		public override void Select()
