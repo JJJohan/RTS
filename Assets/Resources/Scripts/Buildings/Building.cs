@@ -33,10 +33,8 @@ namespace RTS
 		public bool Built() { return m_built; }
 		public Vector3 Position { get; set; }
 		
-		public Building()
+		public void Construct()
 		{
-			//m_pos = a_pos;
-			
 			// Create construction progress text
 			GameObject text = new GameObject();
 			text.transform.position = m_position + m_textPos;
@@ -63,8 +61,6 @@ namespace RTS
 			ghostRender.material.shader = Shader.Find("Transparent/Diffuse");
 			m_ghost.transform.position = m_position;
 		}
-		
-		
 		
 		public virtual void Process(ref Resources a_res)
 		{

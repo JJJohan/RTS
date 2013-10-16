@@ -73,7 +73,8 @@ namespace RTS
 			if (obj)
 			{
 				Building building = (Building)obj.GetComponent(a_name);
-				building.Construct(a_pos);	
+				building.Position = a_pos;	
+				building.Construct();
 				m_buildingList.Add(building);
 			}
 			else
@@ -93,7 +94,6 @@ namespace RTS
 			// Copy details.
 			GameObject tempBuilding = (GameObject)Instantiate(UnityEngine.Resources.Load(a_name));
 			m_cursorOffset = tempBuilding.GetComponent<Building>().Offset();
-			Debug.Log(m_cursorOffset);
 			m_cursorBuilding.transform.localScale = tempBuilding.transform.localScale;
 			filter.mesh = tempBuilding.GetComponent<MeshFilter>().mesh;
 			renderer.material = tempBuilding.GetComponent<MeshRenderer>().material;

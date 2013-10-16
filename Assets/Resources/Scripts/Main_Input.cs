@@ -108,7 +108,7 @@ namespace RTS
 					RaycastHit hit;
 					if (Physics.Raycast(ray, out hit, 10000.0f))
 					{
-						m_cursorBuilding.transform.position = hit.point;
+						m_cursorBuilding.transform.position = hit.point + m_cursorOffset;
 					}
 				}
 				break;
