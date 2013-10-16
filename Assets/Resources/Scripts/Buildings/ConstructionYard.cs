@@ -8,7 +8,7 @@ namespace RTS
 		
 		public ConstructionYard()
 		{
-			m_health = 1000;
+			m_totalHealth = 1000;
 			m_power = 20;
 			m_buildTime = 20;
 			m_cost = 3000;

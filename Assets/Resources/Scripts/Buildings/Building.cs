@@ -9,18 +9,20 @@ namespace RTS
 		protected int m_cost;
 		protected int m_power;
 		protected int m_buildTime;
-		protected float m_totalHealth;
 		protected Texture2D m_cameo;
+		protected float m_totalHealth;
 		protected float m_health;
+		protected float m_damage;
 		protected float m_buildPercent;
 		protected bool m_built;
 		protected bool m_repairing;
 		protected Vector3 m_position;
+		protected Vector3 m_rotation;
 		protected Vector3 m_textPos;
 		protected Vector3 m_offset;
-		private float m_spent;
 		private TextMesh m_text;
 		private GameObject m_ghost;
+		BoxCollider m_collider;
 		
 		// Functions
 		public float Health { get; set; }
@@ -32,9 +34,20 @@ namespace RTS
 		public Vector3 Offset() { return m_offset; }
 		public bool Built() { return m_built; }
 		public Vector3 Position { get; set; }
+		public Vector3 Rotation { get; set; }
 		
-		public void Construct()
+		public void Start()
 		{
+			m_collider = gameObject.AddComponent<BoxCollider>();
+			m_collider.size = new Vector3(1.2f, 2f, 1.2f);
+		}
+		
+		public void Construct(Vector3 a_pos, Vector3 a_rot)
+		{	
+			// Set position and rotation.
+			transform.position = m_position = a_pos;
+			transform.eulerAngles = m_rotation = a_rot;
+			
 			// Create construction progress text
 			GameObject text = new GameObject();
 			text.transform.position = m_position + m_textPos;
@@ -64,10 +77,15 @@ namespace RTS
 		
 		public virtual void Process(ref Resources a_res)
 		{
+			// Check if destroyed
+			if (m_health - m_damage < 0f)
+				Destroy (this);
+			
 			if (!m_built && !m_repairing)
 			{
 				// Increment build percentage.
 				m_buildPercent += Time.deltaTime;
+				m_health = (m_buildPercent / m_buildTime) * m_totalHealth;
 				
 				// Delete building assets when finished.
 				if (m_buildPercent > (float)m_buildTime)
@@ -76,6 +94,7 @@ namespace RTS
 					Destroy(m_ghost);
 					m_built = true;
 					m_buildPercent = m_buildTime;
+					m_health = m_totalHealth;
 				}
 				
 				// Update building position based on completion percentage.
@@ -98,12 +117,12 @@ namespace RTS
 				int cost = (int)(m_cost * Time.deltaTime * .25f);
 				if (a_res.funds > cost)
 				{
-					m_health += Time.deltaTime / m_buildTime;
+					m_damage -= Time.deltaTime / m_buildTime;
 					a_res.funds -= cost;
-					if (m_health > m_totalHealth)
+					if (m_damage < 0)
 					{
 						m_repairing = false;
-						m_health = m_totalHealth;
+						m_damage = 0;
 					}
 				}
 				else
@@ -113,8 +132,8 @@ namespace RTS
 			}
 			
 			// Update colour based on health.
-			float percent = m_health / m_totalHealth;
-			gameObject.renderer.material.color = new Color(percent, percent, percent);
+			//float percent = m_health / m_totalHealth;
+			//gameObject.renderer.material.color = new Color(percent, percent, percent);
 		}
 		
 		public override void Select()

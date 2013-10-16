@@ -67,15 +67,15 @@ namespace RTS
 		}
 		
 		// Place a building.
-		void CreateBuilding(string a_name, Vector3 a_pos)
+		Building CreateBuilding(string a_name, Vector3 a_pos, Vector3 a_rot)
 		{			
 			GameObject obj = (GameObject)Instantiate(UnityEngine.Resources.Load(a_name));
 			if (obj)
 			{
 				Building building = (Building)obj.GetComponent(a_name);
-				building.Position = a_pos;	
-				building.Construct();
+				building.Construct(a_pos, a_rot);
 				m_buildingList.Add(building);
+				return building;
 			}
 			else
 			{
@@ -88,18 +88,9 @@ namespace RTS
 		{
 			// Instantiate the ghost.
 			m_cursorBuilding = new GameObject();
-			MeshFilter filter = m_cursorBuilding.AddComponent<MeshFilter>();
-			MeshRenderer renderer = m_cursorBuilding.AddComponent<MeshRenderer>();
-			
-			// Copy details.
-			GameObject tempBuilding = (GameObject)Instantiate(UnityEngine.Resources.Load(a_name));
-			m_cursorOffset = tempBuilding.GetComponent<Building>().Offset();
-			m_cursorBuilding.transform.localScale = tempBuilding.transform.localScale;
-			filter.mesh = tempBuilding.GetComponent<MeshFilter>().mesh;
-			renderer.material = tempBuilding.GetComponent<MeshRenderer>().material;
-			renderer.material.color = new Color(1f, 1f, 1f, .5f);
-			renderer.material.shader = Shader.Find("Transparent/Diffuse");
-			Destroy(tempBuilding);
+			GhostBuilding script = m_cursorBuilding.AddComponent<GhostBuilding>();
+			script.Copy(a_name);
+			m_cursorOffset = script.Offset();
 		}
 		
 		// Place a unit.

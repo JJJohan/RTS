@@ -33,7 +33,7 @@ namespace RTS
 					m_ray1 = camera.ScreenPointToRay(Input.mousePosition);
 					Physics.Raycast(m_ray1, out m_hit1, 10000.0f);
 				}
-				else if (Input.GetMouseButtonUp(0))
+				if (Input.GetMouseButtonUp(0))
 				{	
 					m_clickPos = new Vector2(-1f, -1f);
 					
@@ -85,13 +85,13 @@ namespace RTS
 						{
 							// Single selection.
 							ClearSelection();
-							if (m_hit2.collider.gameObject.tag == "building" || m_hit2.collider.gameObject.tag == "unit")
+							if (m_hit2.collider.gameObject.tag == "Building" || m_hit2.collider.gameObject.tag == "Unit")
 							{
 								m_selected.Add((Selectable)m_hit2.collider.gameObject.GetComponent<Selectable>());
 								m_selected[m_selected.Count-1].Select();
 								m_cursorMode = Cursor.ORDER;
 								
-								if (m_hit2.collider.gameObject.tag == "building")
+								if (m_hit2.collider.gameObject.tag == "Building")
 									m_selectionType = Selection.BUILDING;
 								else
 									m_selectionType = Selection.UNIT;
@@ -103,12 +103,35 @@ namespace RTS
 				
 			case Cursor.BUILD:
 				if (m_cursorBuilding)
-				{
-					Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-					RaycastHit hit;
-					if (Physics.Raycast(ray, out hit, 10000.0f))
+				{					
+					if (Input.GetMouseButtonUp(0))
 					{
-						m_cursorBuilding.transform.position = hit.point + m_cursorOffset;
+						if (m_cursorBuilding.GetComponent<GhostBuilding>().Placeable())
+						{
+							Destroy(m_cursorBuilding);
+							m_cursorOffset = Vector3.zero;
+							m_selectionType = Selection.BUILDING;
+							m_cursorMode = Cursor.ORDER;
+							CreateBuilding("ConstructionYard", m_cursorBuilding.transform.position, m_cursorBuilding.transform.eulerAngles);
+							
+							break;
+						}
+					}
+					
+					if (Input.GetMouseButton(0))
+					{
+						Vector3 rot = m_cursorBuilding.transform.eulerAngles;
+						float input = (Input.GetAxis("Mouse X") + Input.GetAxis("Mouse Y")) * 5f;
+						m_cursorBuilding.transform.eulerAngles = new Vector3(rot.x, rot.y + input, rot.z);
+					}
+					else
+					{
+						Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+						RaycastHit hit;
+						if (Physics.Raycast(ray, out hit, 10000.0f, 1 << 8))
+						{
+							m_cursorBuilding.transform.position = hit.point + m_cursorOffset;
+						}
 					}
 				}
 				break;
@@ -128,10 +151,14 @@ namespace RTS
 		
 		void ClearSelection()
 		{
-			// Clear selection list starting from a given index.
-			m_selected.Clear();
+			// Deselect all selected entities.
+			foreach(Selectable sel in m_selected)
+			{
+				sel.Deselect();
+			}
 			
 			// Clear selection type
+			m_selected.Clear();
 			m_selectionType = Selection.NONE;
 			m_cursorMode = Cursor.SELECTION;
 		}
