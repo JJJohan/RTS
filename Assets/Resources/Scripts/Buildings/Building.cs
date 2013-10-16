@@ -20,9 +20,11 @@ namespace RTS
 		protected Vector3 m_rotation;
 		protected Vector3 m_textPos;
 		protected Vector3 m_offset;
+		protected Vector3 m_bounds;
+		protected Vector3 m_placeBounds;
 		private TextMesh m_text;
 		private GameObject m_ghost;
-		BoxCollider m_collider;
+		private BoxCollider m_collider;
 		
 		// Functions
 		public float Health { get; set; }
@@ -35,11 +37,12 @@ namespace RTS
 		public bool Built() { return m_built; }
 		public Vector3 Position { get; set; }
 		public Vector3 Rotation { get; set; }
+		public Vector3 PlacementBounds() { return m_placeBounds; }
 		
 		public void Start()
 		{
 			m_collider = gameObject.AddComponent<BoxCollider>();
-			m_collider.size = new Vector3(1.2f, 2f, 1.2f);
+			m_collider.size = m_bounds;
 		}
 		
 		public void Construct(Vector3 a_pos, Vector3 a_rot)

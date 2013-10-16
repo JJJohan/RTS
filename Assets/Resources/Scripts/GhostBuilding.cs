@@ -8,6 +8,9 @@ namespace RTS
 		private bool m_placeable;
 		private bool m_air;
 		private Vector3 m_offset;
+		private Vector2 m_dims;
+		private Vector3[] m_points;
+		private bool m_copy = false;
 		
 		public bool Placeable() { return (m_placeable && !m_air); }
 		public Vector3 Offset() { return m_offset; }
@@ -28,34 +31,43 @@ namespace RTS
 			renderer.material = tempBuilding.GetComponent<MeshRenderer>().material;
 			renderer.material.color = new Color(1f, 1f, 1f, .5f);
 			renderer.material.shader = Shader.Find("Transparent/Diffuse");
+			collider.size = tempBuilding.GetComponent<Building>().PlacementBounds();
 			Destroy(tempBuilding);
 			
 			// Set up boundary check.
 			rigid.isKinematic = true;
 			rigid.useGravity = false;
 			collider.isTrigger = true;
-			collider.size = new Vector3(1.2f, 0.9f, 1.2f);
+			m_dims = new Vector2(collider.bounds.size.x/2, collider.bounds.size.z/2);
 			m_placeable = true;
+			
+			// Initialise bounding box.
+			m_points = new Vector3[9];
+			m_points[0] = new Vector3(m_dims.x, -collider.bounds.size.y/2, m_dims.y);
+			m_points[1] = new Vector3(-m_dims.x, -collider.bounds.size.y/2, m_dims.y);
+			m_points[2] = new Vector3(-m_dims.x, -collider.bounds.size.y/2, -m_dims.y);
+			m_points[3] = new Vector3(m_dims.x, -collider.bounds.size.y/2, -m_dims.y);
+			m_points[4] = new Vector3(m_dims.x, -collider.bounds.size.y/2, 0);
+			m_points[5] = new Vector3(-m_dims.x, -collider.bounds.size.y/2, 0);
+			m_points[6] = new Vector3(0, -collider.bounds.size.y/2, m_dims.y);
+			m_points[7] = new Vector3(0, -collider.bounds.size.y/2, -m_dims.y);
+			m_points[8] = new Vector3(0, -collider.bounds.size.y/2, 0);
+			m_copy = true;
 		}
 		
 		public void Update()
 		{
-			Vector2 dim = new Vector2(collider.bounds.size.x/2, collider.bounds.size.z/2);
-			Vector3[] points = new Vector3[9];
+			if (!m_copy)
+				return;
+			
 			m_air = false;
-			points[0] = transform.position + new Vector3(dim.x, -collider.bounds.size.y/2, dim.y);
-			points[1] = transform.position + new Vector3(-dim.x, -collider.bounds.size.y/2, dim.y);
-			points[2] = transform.position + new Vector3(-dim.x, -collider.bounds.size.y/2, -dim.y);
-			points[3] = transform.position + new Vector3(dim.x, -collider.bounds.size.y/2, -dim.y);
-			points[4] = transform.position + new Vector3(dim.x, -collider.bounds.size.y/2, 0);
-			points[5] = transform.position + new Vector3(-dim.x, -collider.bounds.size.y/2, 0);
-			points[6] = transform.position + new Vector3(0, -collider.bounds.size.y/2, dim.y);
-			points[7] = transform.position + new Vector3(0, -collider.bounds.size.y/2, -dim.y);
-			points[8] = transform.position + new Vector3(0, -collider.bounds.size.y/2, 0);
+			Vector3[] points = new Vector3[9];
 			for (int i = 0; i < 9; ++i)
-			{
-				Ray ray = new Ray(points[i], new Vector3(0f, -1f, 0f));
-				if (!Physics.Raycast(ray, 2.0f, 1 << 8)) m_air = true;
+			{				
+				points[i] = transform.rotation * m_points[i];
+				//Debug.DrawLine(transform.position + m_points[i], transform.position + m_points[i] + new Vector3(0f, -2f, 0f), Color.red);
+				Ray ray = new Ray(transform.position + points[i], new Vector3(0f, -1f, 0f));
+				if (!Physics.Raycast(ray, 0.8f, 1 << 8)) m_air = true;
 			}
 			
 			if (m_placeable && !m_air)
