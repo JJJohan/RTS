@@ -18,7 +18,8 @@ namespace RTS
 	
 	public struct Resources
 	{
-		public float power;
-		public float funds;
+		public int powerUsed;
+		public int power;
+		public int funds;
 	}
 }

@@ -1,9 +1,27 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace RTS
 {	
 	public partial class Main : MonoBehaviour 
 	{	
+		public List<Selectable> m_selected;
+		private RaycastHit m_hit1, m_hit2;
+		private Ray m_ray1, m_ray2;
+		private Vector2 m_clickPos;
+		private int m_cursorMode;
+		private int m_selectionType;
+		private GameObject m_cursorBuilding;
+		private Vector3 m_cursorOffset;
+		
+		public void InitInput()
+		{
+			m_selected = new List<Selectable>(32);
+			m_cursorMode = Cursor.SELECTION;
+			m_selectionType = Selection.NONE;
+			m_clickPos = new Vector2(-1f,-1f);	
+		}
+		
 		public void ProcessInput()
 		{
 			switch(m_cursorMode)

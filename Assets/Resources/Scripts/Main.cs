@@ -7,35 +7,20 @@ namespace RTS
 	{		
 		public List<Unit> m_unitList;
 		public List<Building> m_buildingList;
-		public List<Selectable> m_selected;
-		private RaycastHit m_hit1, m_hit2;
-		private Ray m_ray1, m_ray2;
-		private Vector2 m_clickPos;
 		private Resources m_res;
-		private Texture2D m_guiPanel;
-		private Texture2D m_guiSelect;
-		private int m_cursorMode;
-		private int m_selectionType;
-		private GameObject m_cursorBuilding;
-		private Vector3 m_cursorOffset;
 		
 		void Start()
 		{	
 			m_unitList = new List<Unit>(256);
 			m_buildingList = new List<Building>(64);
-			m_selected = new List<Selectable>(32);
-			m_cursorMode = Cursor.SELECTION;
-			m_selectionType = Selection.NONE;
 			m_res = new Resources();
-			m_clickPos = new Vector2(-1f,-1f);	
+			m_res.funds = 3100;
+			m_res.power = 50;
+			m_res.powerUsed = 0;
 			
-			// RTS Panel
-			m_guiPanel = (Texture2D)UnityEngine.Resources.Load("Textures/panel");
-			m_guiSelect = (Texture2D)UnityEngine.Resources.Load("Textures/gray");
-			
-			m_res.funds = 3100f;
-			m_res.power = 50f;	
-			
+			InitInput();
+			InitGUI();
+
 			//////////
 			// TEMP //
 			//////////
@@ -51,16 +36,34 @@ namespace RTS
 		// Update is called once per frame
 		void Update() 
 		{
+			List<Selectable> m_destroyList = new List<Selectable>();
+			
 			// Update buildings
 			foreach (Building building in m_buildingList)
 			{
 				building.Process(ref m_res);
+				if (building.Destroyed())
+				{
+					m_res.powerUsed -= building.Power();
+					m_destroyList.Add(building);
+				}
 			}
 			
 			// Update units
 			//foreach (Unit unit in m_unitList)
 			{
 				//unit.Process(ref m_res);
+			}
+			
+			// Destroy units queued for removal.
+			for (int i = 0; i < m_destroyList.Count; ++i)
+			{
+				if (m_destroyList[i].tag == "Building")
+					m_buildingList.Remove((Building)m_destroyList[i]);
+				else if (m_destroyList[i].tag == "Unit")
+					m_unitList.Remove((Unit)m_destroyList[i]);
+				
+				Destroy (m_destroyList[i]);
 			}
 			
 			ProcessInput();
@@ -73,9 +76,22 @@ namespace RTS
 			if (obj)
 			{
 				Building building = (Building)obj.GetComponent(a_name);
-				building.Construct(a_pos, a_rot);
-				m_buildingList.Add(building);
-				return building;
+				if (building.Cost() <= m_res.funds)
+				{
+					// Update available resources.
+					m_res.funds -= building.Cost();
+					m_res.powerUsed += building.Power();
+					
+					// Create the building.
+					building.Construct(a_pos, a_rot);
+					m_buildingList.Add(building);
+					return building;
+				}
+				else
+				{
+					Destroy(obj);
+					return null;
+				}
 			}
 			else
 			{

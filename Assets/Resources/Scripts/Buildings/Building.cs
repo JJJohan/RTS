@@ -25,6 +25,7 @@ namespace RTS
 		private TextMesh m_text;
 		private GameObject m_ghost;
 		private BoxCollider m_collider;
+		private bool m_destroyed;
 		
 		// Functions
 		public float Health { get; set; }
@@ -38,11 +39,13 @@ namespace RTS
 		public Vector3 Position { get; set; }
 		public Vector3 Rotation { get; set; }
 		public Vector3 PlacementBounds() { return m_placeBounds; }
+		public bool Destroyed() { return m_destroyed; }
 		
 		public void Start()
 		{
 			m_collider = gameObject.AddComponent<BoxCollider>();
 			m_collider.size = m_bounds;
+			m_destroyed = false;
 		}
 		
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
@@ -80,9 +83,12 @@ namespace RTS
 		
 		public virtual void Process(ref Resources a_res)
 		{
+			if (m_destroyed)
+				return;
+			
 			// Check if destroyed
 			if (m_health - m_damage < 0f)
-				Destroy (this);
+				m_destroyed = true;
 			
 			if (!m_built && !m_repairing)
 			{
@@ -155,6 +161,18 @@ namespace RTS
 				m_ghost.renderer.material.color = new Color(1f, 1f, 1f, 0.5f);
 				
 			gameObject.renderer.material.color = Color.white;
+		}
+		
+		public void OnDestroy()
+		{
+			if (gameObject)
+				Destroy(gameObject);
+			
+			if (m_ghost)
+				Destroy(m_ghost);
+			
+			if (m_text)
+				Destroy(m_text.gameObject);
 		}
 	}
 }
