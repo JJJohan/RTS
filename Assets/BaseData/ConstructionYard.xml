@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!-- Building XML File -->
+
+<Building ID = "CONSTRUCTION_YARD">
+
+	<!-- Basic building properties. -->
+	<Properties
+		Name = "Construction Yard"
+		Cost = "2000"
+		PowerUsage = "20"
+		BuildTime = "20"
+		Health = "1000"
+		Bounds = "1.0, 1.0, 1.0"
+		MiniMapIconSize = "6, 6"
+	/>
+	
+	<!-- Tech tree variables. -->
+	<Tech ReplaceModel = "1">
+		<!-- <TechReq Value = ""/> -->
+		<Upgrade 
+			Name = "CONSTRUCTION_YARD_POWER"
+			Title = "Efficiency"
+			Cost = "1000"
+			UpgradeTime = "20"
+			
+			AdditionalHealth = "250"
+			AdditionalPowerUsage = "10"
+			ProductionMultiplier = "0.9"
+			ModelFile = ""
+			TextureFile = ""
+		/>
+	</Tech>
+	
+	<!-- Path to 3D model file. -->
+	<Model 
+		ModelFileName = "ConstructionYard.obj"
+		TextureFileName = "ConstructionYard.jpg"
+	/>
+	
+	<!-- Path to cameo texture file. -->
+	<Cameo 
+		CameoFileName = "ConstructionYardC.jpg"
+	/>
+	
+</Building>

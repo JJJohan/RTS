@@ -3,6 +3,22 @@ using System.Collections.Generic;
 
 namespace RTS
 {	
+	public static class Cursor
+	{
+		public const int SELECTION = 0;
+		public const int BUILD = 1;
+		public const int ORDER = 2;
+		public const int REPAIR = 3;
+		public const int SELL = 4;
+	}
+	
+	public static class Selection
+	{
+		public const int NONE = 0;
+		public const int UNIT = 1;
+		public const int BUILDING = 2;
+	}
+	
 	public partial class Main : MonoBehaviour 
 	{	
 		public List<Selectable> m_selected;
@@ -108,7 +124,7 @@ namespace RTS
 						{
 							// Single selection.
 							ClearSelection();
-							if (m_hit2.collider.gameObject.tag == "Building" || m_hit2.collider.gameObject.tag == "Unit")
+							if (m_hit2.collider.gameObject.layer == LayerMask.NameToLayer("Entity"))
 							{
 								m_selected.Add((Selectable)m_hit2.collider.gameObject.GetComponent<Selectable>());
 								m_selected[m_selected.Count-1].Select();
@@ -131,7 +147,7 @@ namespace RTS
 					{
 						if (m_cursorBuilding.GetComponent<GhostBuilding>().Placeable())
 						{
-							CreateBuilding("ConstructionYard", m_cursorBuilding.transform.position, m_cursorBuilding.transform.eulerAngles);
+							CreateBuilding(m_cursorBuilding.GetComponent<GhostBuilding>().Prefab(), m_cursorBuilding.transform.position, m_cursorBuilding.transform.eulerAngles);
 							ClearCursor();
 							break;
 						}

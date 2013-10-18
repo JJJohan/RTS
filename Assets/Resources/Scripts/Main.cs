@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace RTS
 {	
+	public struct Resources
+	{
+		public int powerUsed;
+		public int power;
+		public int funds;
+	}
+	
 	public partial class Main : MonoBehaviour 
 	{		
 		public List<Unit> m_unitList;
@@ -20,15 +27,13 @@ namespace RTS
 			
 			InitInput();
 			InitGUI();
+			ParseFiles();
 
 			//////////
 			// TEMP //
 			//////////
 			
-			//CreateBuilding("ConstructionYard", new Vector3(20,5,3));
-			
-			m_cursorMode = Cursor.BUILD;
-			CreateBuildingGhost("ConstructionYard");		
+			CreateBuildingGhost("CONSTRUCTION_YARD");		
 			
 			//////////
 		}
@@ -70,42 +75,40 @@ namespace RTS
 		}
 		
 		// Place a building.
-		Building CreateBuilding(string a_name, Vector3 a_pos, Vector3 a_rot)
+		Building CreateBuilding(BuildingPrefab a_prefab, Vector3 a_pos, Vector3 a_rot)
 		{			
-			GameObject obj = (GameObject)Instantiate(UnityEngine.Resources.Load(a_name));
-			if (obj)
+			if (a_prefab.cost <= m_res.funds)
 			{
-				Building building = (Building)obj.GetComponent(a_name);
-				if (building.Cost() <= m_res.funds)
-				{
-					// Update available resources.
-					m_res.powerUsed += building.Power();
-					
-					// Create the building.
-					building.Construct(a_pos, a_rot);
-					m_buildingList.Add(building);
-					return building;
-				}
-				else
-				{
-					Destroy(obj);
-					return null;
-				}
+				// Initialise the building.
+				GameObject obj = new GameObject();
+				BuildingTemplate template = obj.AddComponent<BuildingTemplate>();
+				template.Load(a_prefab, ref m_dataFile);
+				template.Construct(a_pos, a_rot);
+				m_buildingList.Add(template);
+				
+				// Update available resources.
+				m_res.powerUsed += template.Power();
+				
+				return template;
 			}
-			else
-			{
-				throw new UnityException();
-			}
+			
+			return null;
 		}
 		
 		// Create a ghost building to show where it is being placed.
 		void CreateBuildingGhost(string a_name)
 		{
-			// Instantiate the ghost.
-			m_cursorBuilding = new GameObject();
-			GhostBuilding script = m_cursorBuilding.AddComponent<GhostBuilding>();
-			script.Copy(a_name);
-			m_cursorOffset = script.Offset();
+			// Fetch prefab
+			BuildingPrefab prefab;
+			if (m_buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out prefab))
+			{
+				// Instantiate the ghost.
+				m_cursorMode = Cursor.BUILD;
+				m_selectionType = Selection.NONE;
+				m_cursorBuilding = new GameObject();
+				GhostBuilding script = m_cursorBuilding.AddComponent<GhostBuilding>();
+				script.Create(prefab, ref m_dataFile);
+			}
 		}
 		
 		// Place a unit.

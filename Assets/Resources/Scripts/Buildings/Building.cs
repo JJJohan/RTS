@@ -23,6 +23,8 @@ namespace RTS
 		protected Vector3 m_bounds;
 		protected Vector3 m_placeBounds;
 		protected Vector2 m_miniSize;
+		protected MeshFilter m_mesh;
+		protected MeshRenderer m_renderer;
 		private TextMesh m_text;
 		private GameObject m_ghost;
 		private BoxCollider m_collider;
@@ -45,10 +47,14 @@ namespace RTS
 		
 		public void Start()
 		{
+			m_textPos = new Vector3(0f, 10f, 0f);
 			m_collider = gameObject.AddComponent<BoxCollider>();
-			m_collider.size = m_bounds;
+			m_collider.size = m_mesh.mesh.bounds.size;
+			m_collider.size = new Vector3(m_collider.size.x, m_collider.size.y * 0.9f, m_collider.size.z);
+			m_collider.center = new Vector3(0f, m_mesh.mesh.bounds.size.y * 0.5f, 0f);
 			m_destroyed = false;
 			gameObject.layer = 10;
+			gameObject.tag = "Building";
 			
 			// Create minimap icon
 			m_miniIcon = GameObject.CreatePrimitive(PrimitiveType.Plane);
@@ -125,7 +131,7 @@ namespace RTS
 				if (m_text)
 				{
 					m_text.transform.LookAt(m_text.transform.position * 2 - Camera.main.transform.position);
-					m_text.transform.eulerAngles = new Vector3(0f, m_text.transform.eulerAngles.y, m_text.transform.eulerAngles.z);
+					//m_text.transform.eulerAngles = new Vector3(0f, m_text.transform.eulerAngles.y, m_text.transform.eulerAngles.z);
 					m_text.text = ((int)(((m_buildPercent / m_buildTime) * 100) + .5f)).ToString() + "%";
 				}
 			}

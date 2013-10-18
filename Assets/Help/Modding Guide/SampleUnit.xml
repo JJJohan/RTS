@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- Building XML File -->
+
+<Unit Name="UNIT_NAME">
+
+	<!-- Basic building properties. -->
+	<Properties
+		Cost = "2000"
+		PowerUsage = "20"
+		BuildTime = "20"
+		Health = "1000"
+		MiniMapIconSize = "6,6"
+	/>
+	
+	<!-- Tech tree variables. -->
+	<Tech>
+		<TechReq Value = "CONSTRUCTION_YARD"/>
+		<TechUpgrade Value = "ARMOR_LEVEL_1"/>
+		<TechUpgrade Value = "ARMOR_LEVEL_2"/>
+		<TechUpgrade Value = "ARMOR_LEVEL_3"/>
+	</Tech>
+	
+	<!-- Path to 3D model file. -->
+	<Model 
+		ModelFileName = ""
+		TextureFileName = ""
+		Offset = "0,5,0"
+		Scale = "1,1,1"
+		CollisionBounds = "1,1,1"
+	/>
+	
+	<!-- Path to cameo texture file. -->
+	<Cameo 
+		CameoFileName = ""
+	/>
+	
+</Unit>
