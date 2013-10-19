@@ -27,6 +27,7 @@ namespace RTS
 			Rigidbody rigid = gameObject.AddComponent<Rigidbody>();
 			BoxCollider collider = gameObject.AddComponent<BoxCollider>();
 			m_prefab = a_prefab;
+			gameObject.name = "Cursor Building";
 			
 			// Load resources.
 			ObjImporter importer = new ObjImporter();

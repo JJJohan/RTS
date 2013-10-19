@@ -3,46 +3,84 @@ using System.Collections.Generic;
 
 namespace RTS
 {	
-	public partial class Minimap : MonoBehaviour 
+	public class Minimap : MonoBehaviour 
 	{
 		private GameObject m_left;
 		private GameObject m_right;
 		private float m_scale;
+		private Material m_minimap;
+		private Camera m_camera;
+		private List<MinimapIcon> m_icons;
+		private Rect m_bounds;
 
 		void Start()
 		{
-			m_scale = Camera.main.GetComponent<CameraMovement>().Scale();
-			m_left = GameObject.CreatePrimitive(PrimitiveType.Plane);
-			m_right = GameObject.CreatePrimitive(PrimitiveType.Plane);
-			m_left.layer = m_right.layer = LayerMask.NameToLayer("Minimap");
-			m_left.renderer.material = m_right.renderer.material = new Material(Shader.Find("Unlit/Texture"));
-			m_left.transform.localScale = m_right.transform.localScale = new Vector3(1,1,m_scale);
+			// Init minimap
+			m_icons = new List<MinimapIcon>();
+			m_bounds = Main.ResizeGUI(new Rect(1920 - 224, 16, 209, 184));
+				
+			// Create the minimap render texture
+			m_minimap = (Material)UnityEngine.Resources.Load("textures/minimapRT");
+			
+			// Create Camera
+			m_camera = gameObject.AddComponent<Camera>();
+			m_camera.isOrthoGraphic = true;
+			m_camera.orthographicSize = 500f;
+			m_camera.nearClipPlane = 10f;
+			m_camera.farClipPlane = 1000f;
+			m_camera.clearFlags = CameraClearFlags.Color;
+			m_camera.backgroundColor = Color.black;
+			m_camera.targetTexture = (RenderTexture)m_minimap.mainTexture;
+			m_camera.rect = new Rect(0f, 0f, 1f, 1f);
+			gameObject.transform.position = new Vector3(0f, 100f, 0f);
+			gameObject.transform.eulerAngles = new Vector3(90f, 0f, 0f);
+			gameObject.layer = LayerMask.NameToLayer("Minimap");
+			gameObject.name = "Minimap";
 		}
 		
-		void Update()
+		public void AddIcon(ref MinimapIcon a_icon)
 		{
-			// Update scale
-			if (Camera.main.GetComponent<CameraMovement>().Zoomed() || m_scale < 0.1f)
-			{
-				m_scale = Camera.main.GetComponent<CameraMovement>().Scale();
-				m_left.transform.localScale = m_right.transform.localScale = new Vector3(1,1,m_scale);
-			}
+			a_icon.SetBounds(m_bounds);
+			m_icons.Add(a_icon);
+		}
+		
+		public Vector2 WorldToMap(Vector2 a_pos)
+		{
+			Vector2 pos = new Vector2(a_pos.x / 1000f * m_bounds.width, -a_pos.y / 1000f * m_bounds.height);
+			return new Vector2(m_bounds.x + m_bounds.width/2 + pos.x, m_bounds.y + m_bounds.height/2 + pos.y);
+		}
+		
+		public Vector2 MapToWorld(Vector2 a_pos)
+		{
+			Vector2 pos = new Vector2(a_pos.x - m_bounds.width/2 - m_bounds.x, a_pos.y - m_bounds.height/2 - m_bounds.y);
+			return new Vector2((pos.x / m_bounds.width) * 1000f, (-pos.y / m_bounds.height) * 1000f);
+		}
+		
+		public void Draw()
+		{			
+			// Draw minimap
+			Graphics.DrawTexture(m_bounds, m_minimap.mainTexture, m_minimap);
 			
-			Vector3 camForward = Camera.main.transform.forward;
-			camForward = new Vector3(camForward.x, 0, camForward.z);
+			// Draw icons
+			foreach (MinimapIcon icon in m_icons)
+				icon.Draw();
 			
-			m_left.transform.position = Camera.main.transform.position;
-			m_right.transform.position = Camera.main.transform.position;
+			// Calculate camera line direction
+			Vector2 camPos = new Vector2(Camera.main.transform.position.x, Camera.main.transform.position.z);
+			Vector2 left2, left = new Vector2(-10, -10);
+			Vector2 right2, right = new Vector2(10, -10);
+			float rad = Camera.main.transform.eulerAngles.y * Mathf.Deg2Rad;
+			float cs = Mathf.Cos(rad);
+			float sn = Mathf.Sin(rad);
+			left2.x = left.x * cs - left.y * sn;
+			left2.y = left.x * sn + left.y * cs;
+			right2.x = right.x * cs - right.y * sn;
+			right2.y = right.x * sn + right.y * cs;
 			
-			Vector3 camDir = Camera.main.transform.eulerAngles;
-			camDir = new Vector3(0, camDir.y, 0);
-			m_left.transform.eulerAngles = m_right.transform.eulerAngles = camDir;
-			m_left.transform.Rotate(new Vector3(0,1,0), -45.0f);
-			m_right.transform.Rotate(new Vector3(0,1,0), 45.0f);
-			//m_right.transform.eulerAngles = new Quaternion(0f, 0.5f, 0f, -0.5f) * camDir;
-			
-			m_left.transform.Translate(new Vector3(0,0,30 + m_scale * 4.0f), Space.Self);
-			m_right.transform.Translate(new Vector3(0,0,30 + m_scale * 4.0f), Space.Self);
+			// Draw camera lines
+			camPos = WorldToMap(camPos);
+			Line.Draw(camPos, camPos + left2, Color.white);
+			Line.Draw(camPos, camPos + right2, Color.white);
 		}
 	}
 }

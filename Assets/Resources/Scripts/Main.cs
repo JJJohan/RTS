@@ -85,6 +85,9 @@ namespace RTS
 				template.Load(a_prefab, ref m_dataFile);
 				template.Construct(a_pos, a_rot);
 				m_buildingList.Add(template);
+				MinimapIcon icon;
+				template.GetIcon(out icon);
+				m_minimap.AddIcon(ref icon);
 				
 				// Update available resources.
 				m_res.powerUsed += template.Power();

@@ -32,8 +32,10 @@ namespace RTS
 		public Vector3 Rotation { get; set; }
 		public bool Destroyed() { return m_destroyed; }
 		
-		public override void Start()
+		public override void Init()
 		{
+			base.Init();
+			
 			m_collider = gameObject.AddComponent<BoxCollider>();
 			m_collider.size = m_mesh.mesh.bounds.size;
 			m_collider.size = new Vector3(m_collider.size.x, m_collider.size.y * 0.9f, m_collider.size.z);
@@ -41,8 +43,6 @@ namespace RTS
 			m_destroyed = false;
 			gameObject.layer = 10;
 			gameObject.tag = "Building";
-			
-			base.Start();
 		}
 		
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
@@ -50,6 +50,7 @@ namespace RTS
 			// Set position and rotation.
 			transform.position = m_position = a_pos;
 			transform.eulerAngles = m_rotation = a_rot;
+			m_icon.Process(new Vector2(a_pos.x, -a_pos.z));
 			
 			// Create construction progress text
 			GameObject text = new GameObject();
@@ -63,6 +64,7 @@ namespace RTS
 			m_text.alignment = TextAlignment.Center;
 			m_text.anchor = TextAnchor.MiddleCenter;
 			m_text.transform.position = m_position + new Vector3(0f, m_mesh.mesh.bounds.size.y / 2, 0f);
+			text.name = "Building Text";
 			
 			// Create ghost copy
 			m_ghost = new GameObject();
@@ -75,12 +77,15 @@ namespace RTS
 			ghostRender.material.color = new Color(1f, 1f, 1f, 0.5f);
 			ghostRender.material.shader = Shader.Find("Transparent/Diffuse");
 			m_ghost.transform.position = m_position;
+			m_ghost.name = "Ghost Building";
 		}
 		
 		public override void Process(ref Resources a_res)
 		{
 			if (m_destroyed)
 				return;
+		
+			base.Process(ref a_res);
 			
 			// Check if destroyed
 			if (m_health - m_damage < 0f)
@@ -109,12 +114,8 @@ namespace RTS
 				if (m_text)
 				{
 					m_text.transform.rotation = Camera.main.transform.rotation;// * new Quaternion(0.707f, 0f, 0f, 0.707f);
-					//m_text.transform.LookAt(m_text.transform.position * 2 - Camera.main.transform.position);
-					//m_text.transform.eulerAngles = new Vector3(0f, m_text.transform.eulerAngles.y, m_text.transform.eulerAngles.z);
 					m_text.text = ((int)(((m_buildPercent / m_buildTime) * 100) + .5f)).ToString() + "%";
 				}
-				
-				base.Process(ref a_res);
 			}
 			
 			// Repair building.
@@ -145,30 +146,30 @@ namespace RTS
 		
 		public override void Select()
 		{
+			base.Select();
+			
 			if (m_ghost)
 				m_ghost.renderer.material.color = new Color(0f, 1f, 0f, 0.5f);
 			
 			gameObject.renderer.material.color = Color.green;
-			m_miniIcon.renderer.material.color = Color.white;
-			
+
 			// TODO: Play selection sound.
-			
-			base.Select();
 		}
 		
 		public override void Deselect()
 		{
+			base.Deselect();
+			
 			if (m_ghost)
 				m_ghost.renderer.material.color = new Color(1f, 1f, 1f, 0.5f);
 				
 			gameObject.renderer.material.color = Color.white;
-			m_miniIcon.renderer.material.color = Color.blue;
-			
-			base.Deselect();
 		}
 		
 		public override void OnDestroy()
 		{
+			base.OnDestroy();
+			
 			if (gameObject)
 				Destroy(gameObject);
 			
@@ -177,11 +178,6 @@ namespace RTS
 			
 			if (m_text)
 				Destroy(m_text.gameObject);
-			
-			if (m_miniIcon)
-				Destroy(m_miniIcon);
-			
-			base.OnDestroy();
 		}
 	}
 }

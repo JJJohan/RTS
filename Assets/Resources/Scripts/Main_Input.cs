@@ -123,17 +123,36 @@ namespace RTS
 						else
 						{
 							// Single selection.
-							ClearSelection();
+							
 							if (m_hit2.collider.gameObject.layer == LayerMask.NameToLayer("Entity"))
 							{
-								m_selected.Add((Selectable)m_hit2.collider.gameObject.GetComponent<Selectable>());
-								m_selected[m_selected.Count-1].Select();
-								m_cursorMode = Cursor.ORDER;
+								bool selected = false;
+								foreach(Selectable s in m_selected)
+								{
+									if (s == m_hit2.collider.gameObject.GetComponent<Selectable>())
+									{
+										selected = true;
+										break;
+									}
+								}
 								
-								if (m_hit2.collider.gameObject.tag == "Building")
-									m_selectionType = Selection.BUILDING;
-								else
-									m_selectionType = Selection.UNIT;
+								if (!selected)
+								{
+									ClearSelection();
+									
+									m_selected.Add((Selectable)m_hit2.collider.gameObject.GetComponent<Selectable>());
+									m_selected[m_selected.Count-1].Select();
+									m_cursorMode = Cursor.ORDER;
+									
+									if (m_hit2.collider.gameObject.tag == "Building")
+										m_selectionType = Selection.BUILDING;
+									else
+										m_selectionType = Selection.UNIT;
+								}
+							}
+							else
+							{
+								ClearSelection();
 							}
 						}
 					}

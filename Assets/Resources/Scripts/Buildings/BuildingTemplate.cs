@@ -15,7 +15,8 @@ namespace RTS
 		{			
 			m_mesh = gameObject.AddComponent<MeshFilter>();
 			m_renderer = gameObject.AddComponent<MeshRenderer>();
-			
+			gameObject.name = a_prefab.name;
+				
 			// Properties
 			m_totalHealth = a_prefab.health;
 			m_power = a_prefab.powerUsage;
@@ -94,6 +95,8 @@ namespace RTS
 					}
 				}
 			}
+			
+			base.Init();
 		}
 	}
 }

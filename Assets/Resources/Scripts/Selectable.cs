@@ -12,25 +12,25 @@ namespace RTS
 		protected float m_health;
 		protected float m_damage;
 		protected Vector2 m_miniSize;
-		protected GameObject m_miniIcon;
+		protected MinimapIcon m_icon;
 		
 		private GameObject m_selectionBox;
 		private GameObject m_healthFront;
 		private GameObject m_healthBack;
 		
-		public virtual void Start()
+		public void GetIcon(out MinimapIcon a_icon)
 		{
-			// Create minimap icon
-			m_miniIcon = GameObject.CreatePrimitive(PrimitiveType.Plane);
-			m_miniIcon.renderer.material = new Material(Shader.Find("Self-Illumin/Diffuse"));
-			m_miniIcon.renderer.material.color = Color.blue;
-			m_miniIcon.transform.localScale = new Vector3(m_miniSize.x, 1f, m_miniSize.y);
-			m_miniIcon.layer = 9;
-			m_miniIcon.transform.position = transform.position + new Vector3(0,50,0);
+			a_icon = m_icon;
+		}
+		
+		public virtual void Init()
+		{
+			// Create minimap icon				
+			m_icon = new MinimapIcon(m_miniSize, true);
 		}
 		
 		public virtual void Process(ref Resources a_ref)
-		{
+		{	
 			// Update health bar if selected.
 			if (m_selectionBox)
 			{
@@ -44,6 +44,10 @@ namespace RTS
 		
 		public virtual void Select()
 		{
+			// Set minimap icon colour.
+			m_icon.SetColour(Color.white);
+			
+			// Find largest scale vector.
 			Vector3 bounds = gameObject.GetComponent<MeshFilter>().mesh.bounds.size;
 			float largest = bounds.x;
 			if (bounds.y > largest) largest = bounds.y;
@@ -54,6 +58,7 @@ namespace RTS
 			Billboard selectionBox = m_selectionBox.AddComponent<Billboard>();
 			selectionBox.Create(largest, largest, "Textures/selection");
 			m_selectionBox.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
+			m_selectionBox.name = "Selection Box";
 			
 			// Health Back
 			m_healthBack = new GameObject();
@@ -62,6 +67,7 @@ namespace RTS
 			m_healthBack.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
 			m_healthBack.GetComponent<MeshRenderer>().material.color = Color.red;
 			m_healthBack.transform.localScale = new Vector3(0f, 1f, 1f);
+			m_healthBack.name = "Health Bar Back";
 			
 			// Health Front			
 			m_healthFront = new GameObject();
@@ -70,11 +76,15 @@ namespace RTS
 			m_healthFront.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
 			m_healthFront.GetComponent<MeshRenderer>().material.color = Color.green;
 			m_healthFront.transform.localScale = new Vector3(1f, 1f, 1f);
-				
+			m_healthFront.name = "Health Bar Front";
 		}
 		
 		public virtual void Deselect()
 		{
+			// Set minimap icon colour.
+			m_icon.SetColour(Color.blue);
+			
+			// Clear selection box.
 			Destroy (m_selectionBox);
 			Destroy (m_healthFront);
 			Destroy (m_healthBack);

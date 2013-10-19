@@ -1,20 +1,23 @@
 using UnityEngine;
 
 namespace RTS
-{	
+{		
 	public partial class Main : MonoBehaviour 
 	{	
 		private Texture2D m_guiPanel;
 		private Texture2D m_guiSelect;
 		private GUIStyle m_gui;
-		private Material m_minimap;
+		private Minimap m_minimap;
 		
 		void InitGUI()
-		{
+		{			
 			// RTS Panel
 			m_guiPanel = (Texture2D)UnityEngine.Resources.Load("Textures/panel");
 			m_guiSelect = (Texture2D)UnityEngine.Resources.Load("Textures/gray");
-			m_minimap = (Material)UnityEngine.Resources.Load("textures/minimapRT");
+		
+			// Minimap
+			GameObject obj = new GameObject();
+			m_minimap = obj.AddComponent<Minimap>();
 			
 			// GUI Style
 			m_gui = new GUIStyle();
@@ -35,7 +38,7 @@ namespace RTS
 				
 			// Draw scaled GUI.
 		    GUI.DrawTexture(ResizeGUI(new Rect(1920 - 240, 0, 240, 1080)), m_guiPanel);
-			Graphics.DrawTexture(ResizeGUI(new Rect(1920 - 224, 16, 209, 184)), m_minimap.mainTexture, m_minimap);
+			m_minimap.Draw();
 			
 			// Draw power available / required.
 			GUI.Label(ResizeGUI(new Rect(1920 - 225, 265, 209, 27)), ((int)m_res.powerUsed).ToString() + "/" + ((int)m_res.power).ToString(), m_gui);
@@ -43,8 +46,9 @@ namespace RTS
 			// Draw available funds.
 			GUI.Label(ResizeGUI(new Rect(1920 - 225, 365, 209, 27)), ((int)m_res.funds).ToString(), m_gui);
 		}
-		 
-		Rect ResizeGUI(Rect _rect)
+		
+		
+		static public Rect ResizeGUI(Rect _rect)
 		{
 		    float FilScreenWidth = _rect.width / 1920;
 		    float rectWidth = FilScreenWidth * Screen.width;
