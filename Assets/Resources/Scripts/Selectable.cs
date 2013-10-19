@@ -31,11 +31,21 @@ namespace RTS
 		
 		public virtual void Process(ref Resources a_ref)
 		{	
+			UpdateSelectionBox();
+		}
+		
+		private void UpdateSelectionBox()
+		{
 			// Update health bar if selected.
 			if (m_selectionBox)
 			{
 				float percent = (m_health - m_damage) / m_totalHealth;
+				percent = Mathf.Floor(percent * 20) / 20;
 				if (percent < 0.01f) percent = 0.01f;
+				
+				// Update health bar texture to have 20 blocks.
+				Vector2 scale = new Vector2(percent * 20f, 1f);
+				m_healthFront.GetComponent<MeshRenderer>().material.mainTextureScale = scale;
 				
 				m_healthFront.transform.localScale = new Vector3(percent, 1f, 1f);
 				m_healthBack.transform.localScale = new Vector3(1f - percent, 1f, 1f);
@@ -63,20 +73,23 @@ namespace RTS
 			// Health Back
 			m_healthBack = new GameObject();
 			Billboard healthBack = m_healthBack.AddComponent<Billboard>();
-			healthBack.Create(largest/2, largest/20, new Vector2(largest/2, -bounds.y * 1.5f), Billboard.Anchor.Right);
+			healthBack.Create(largest/2, largest/20, new Vector2(largest/2, -bounds.y * 1.5f), Billboard.Anchor.Right, "Textures/HealthBack");
 			m_healthBack.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
-			m_healthBack.GetComponent<MeshRenderer>().material.color = Color.red;
+			//m_healthBack.GetComponent<MeshRenderer>().material.color = Color.red;
 			m_healthBack.transform.localScale = new Vector3(0f, 1f, 1f);
 			m_healthBack.name = "Health Bar Back";
 			
 			// Health Front			
 			m_healthFront = new GameObject();
 			Billboard healthFront = m_healthFront.AddComponent<Billboard>();
-			healthFront.Create(largest/2, largest/20, new Vector2(-largest/2, -bounds.y * 1.5f), Billboard.Anchor.Left);
+			healthFront.Create(largest/2, largest/20, new Vector2(-largest/2, -bounds.y * 1.5f), Billboard.Anchor.Left, "Textures/HealthFront");
 			m_healthFront.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
-			m_healthFront.GetComponent<MeshRenderer>().material.color = Color.green;
+			//m_healthFront.GetComponent<MeshRenderer>().material.color = Color.green;
 			m_healthFront.transform.localScale = new Vector3(1f, 1f, 1f);
 			m_healthFront.name = "Health Bar Front";
+			
+			// Update health bar
+			UpdateSelectionBox();
 		}
 		
 		public virtual void Deselect()

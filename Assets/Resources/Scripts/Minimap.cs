@@ -12,7 +12,27 @@ namespace RTS
 		private Camera m_camera;
 		private List<MinimapIcon> m_icons;
 		private Rect m_bounds;
-
+		
+		/* REALTIME RENDERERING
+		private float m_shadowDist;
+		void OnPreRender()
+		{
+			m_shadowDist = QualitySettings.shadowDistance;
+			QualitySettings.shadowDistance = 0f;
+		}
+		
+		void OnPostRender()
+		{
+			QualitySettings.shadowDistance = m_shadowDist;
+		}*/
+		
+		void OnPostRender()
+		{
+				//if (m_camera)
+				Destroy (m_camera);
+				//m_camera.enabled =false;
+		}
+		
 		void Start()
 		{
 			// Init minimap
@@ -32,6 +52,7 @@ namespace RTS
 			m_camera.backgroundColor = Color.black;
 			m_camera.targetTexture = (RenderTexture)m_minimap.mainTexture;
 			m_camera.rect = new Rect(0f, 0f, 1f, 1f);
+			m_camera.cullingMask = 1 << LayerMask.NameToLayer("Terrain");
 			gameObject.transform.position = new Vector3(0f, 100f, 0f);
 			gameObject.transform.eulerAngles = new Vector3(90f, 0f, 0f);
 			gameObject.layer = LayerMask.NameToLayer("Minimap");
@@ -57,7 +78,7 @@ namespace RTS
 		}
 		
 		public void Draw()
-		{			
+		{	
 			// Draw minimap
 			Graphics.DrawTexture(m_bounds, m_minimap.mainTexture, m_minimap);
 			

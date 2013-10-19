@@ -81,7 +81,7 @@ public class Billboard : MonoBehaviour
 		filter.mesh = m_mesh;
 		if (a_texture != "")
 			renderer.material.mainTexture = (Texture2D)Resources.Load(a_texture);
-		renderer.material.shader = Shader.Find("GUI/Text Shader");
+		renderer.material.shader = Shader.Find("Billboard");
 		
 		gameObject.transform.rotation = Camera.main.transform.rotation * new Quaternion(0.707f, 0f, 0f, 0.707f);
 	}
@@ -107,7 +107,7 @@ public class Billboard : MonoBehaviour
 		{
 			Vector2 offset = new Vector2();
 			offset.x = m_offset.x / transform.localScale.x;
-			offset.y = m_offset.y / transform.localScale.y;
+			offset.y = m_offset.y / transform.localScale.y;			
 			
 			Vector3[] vertices = m_mesh.vertices;
 			if (m_anchor == Anchor.Left)
