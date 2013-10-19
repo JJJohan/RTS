@@ -114,7 +114,7 @@ namespace RTS
 				if (m_text)
 				{
 					m_text.transform.rotation = Camera.main.transform.rotation;// * new Quaternion(0.707f, 0f, 0f, 0.707f);
-					m_text.text = ((int)(((m_buildPercent / m_buildTime) * 100) + .5f)).ToString() + "%";
+					m_text.text = ((int)((m_buildPercent / m_buildTime) * 100)).ToString() + "%";
 				}
 			}
 			

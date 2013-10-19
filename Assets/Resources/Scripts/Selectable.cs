@@ -40,11 +40,13 @@ namespace RTS
 			if (m_selectionBox)
 			{
 				float percent = (m_health - m_damage) / m_totalHealth;
-				percent = Mathf.Floor(percent * 20) / 20;
+				float blocks = Mathf.Floor(m_totalHealth / 200);
+				blocks = Mathf.Clamp(blocks, 4, 40);
+				percent = Mathf.Floor(percent * blocks) / blocks;
 				if (percent < 0.01f) percent = 0.01f;
 				
 				// Update health bar texture to have 20 blocks.
-				Vector2 scale = new Vector2(percent * 20f, 1f);
+				Vector2 scale = new Vector2(percent * blocks, 1f);
 				m_healthFront.GetComponent<MeshRenderer>().material.mainTextureScale = scale;
 				
 				m_healthFront.transform.localScale = new Vector3(percent, 1f, 1f);
