@@ -22,6 +22,11 @@ namespace RTS
 			}
 		} 
 		
+		public static void Draw(Vector2 a_start, Vector2 a_end)
+		{
+			Draw (a_start, a_end, Color.white);
+		}
+		
 		public static void Draw(Vector2 a_start, Vector2 a_end, Color a_color)
 		{
 		    CreateLineMaterial();

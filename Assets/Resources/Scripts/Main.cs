@@ -3,11 +3,20 @@ using System.Collections.Generic;
 
 namespace RTS
 {	
-	public struct Resources
+	public class Resources
 	{
+		public Resources()
+		{
+			buildings = new List<string>();
+			prefabs.buildingPrefabs = new Dictionary<string, BuildingPrefab>();
+			prefabs.unitPrefabs = new Dictionary<string, UnitPrefab>();
+		}
+		
 		public int powerUsed;
 		public int power;
 		public int funds;
+		public List<string> buildings;
+		public Prefabs prefabs;
 	}
 	
 	public partial class Main : MonoBehaviour 
@@ -22,7 +31,7 @@ namespace RTS
 			m_buildingList = new List<Building>(64);
 			m_res = new Resources();
 			m_res.funds = 3100;
-			m_res.power = 50;
+			m_res.power = 0;
 			m_res.powerUsed = 0;
 			
 			InitInput();
@@ -71,6 +80,10 @@ namespace RTS
 				Destroy (m_destroyList[i]);
 			}
 			
+			// Update GUI
+			m_sidePanel.Update(m_res);
+			
+			// Update Input
 			ProcessInput();
 		}
 		
@@ -87,10 +100,11 @@ namespace RTS
 				m_buildingList.Add(template);
 				MinimapIcon icon;
 				template.GetIcon(out icon);
-				m_minimap.AddIcon(ref icon);
+				m_sidePanel.GetMinimap().AddIcon(ref icon);
 				
 				// Update available resources.
 				m_res.powerUsed += template.Power();
+				m_res.buildings.Add(a_prefab.ID);
 				
 				return template;
 			}
@@ -103,7 +117,7 @@ namespace RTS
 		{
 			// Fetch prefab
 			BuildingPrefab prefab;
-			if (m_buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out prefab))
+			if (m_res.prefabs.buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out prefab))
 			{
 				// Instantiate the ghost.
 				m_cursorMode = Cursor.BUILD;

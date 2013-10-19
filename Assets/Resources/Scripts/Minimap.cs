@@ -3,34 +3,17 @@ using System.Collections.Generic;
 
 namespace RTS
 {	
-	public class Minimap : MonoBehaviour 
+	public class Minimap : MonoBehaviour
 	{
-		private GameObject m_left;
-		private GameObject m_right;
 		private float m_scale;
 		private Material m_minimap;
 		private Camera m_camera;
 		private List<MinimapIcon> m_icons;
 		private Rect m_bounds;
 		
-		/* REALTIME RENDERERING
-		private float m_shadowDist;
-		void OnPreRender()
-		{
-			m_shadowDist = QualitySettings.shadowDistance;
-			QualitySettings.shadowDistance = 0f;
-		}
-		
 		void OnPostRender()
 		{
-			QualitySettings.shadowDistance = m_shadowDist;
-		}*/
-		
-		void OnPostRender()
-		{
-				//if (m_camera)
-				Destroy (m_camera);
-				//m_camera.enabled =false;
+			Destroy (m_camera);
 		}
 		
 		void Start()

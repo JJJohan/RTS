@@ -11,6 +11,9 @@
 .DS_Store
 *.swp
 *.Trashes
+
+# Windows:
+Thumbs.db
  
 # All platforms:
 Library
@@ -21,4 +24,7 @@ Materials
 *.unityproj
 *.sln
 *.userprefs
-Thumbs.db
+
+# Custom:
+BaseData.Data
+BaseData.Data.meta

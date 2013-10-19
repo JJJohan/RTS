@@ -8,6 +8,12 @@ using Ionic.Zip;
 
 namespace RTS
 {	
+	public struct Prefabs
+	{
+		public Dictionary<string, BuildingPrefab> buildingPrefabs;
+		public Dictionary<string, UnitPrefab> unitPrefabs;
+	}
+	
 	public struct BuildingPrefab
 	{
 		public struct Upgrade
@@ -23,7 +29,9 @@ namespace RTS
 			public string texturePath;
 		}
 		
+		public string ID;
 		public string name;
+		public int menuID;
 		public int cost;
 		public int powerUsage;
 		public int buildTime;
@@ -39,17 +47,14 @@ namespace RTS
 		public int replace;
 	}
 	
-	struct UnitPrefab
+	public struct UnitPrefab
 	{
 	}
 	
 	public partial class Main : MonoBehaviour 
 	{
-		ZipFile m_dataFile;
-		
-		Dictionary<string, BuildingPrefab> m_buildingPrefabs = new Dictionary<string, BuildingPrefab>();		
-		Dictionary<string, UnitPrefab> m_unitPrefabs = new Dictionary<string, UnitPrefab>();
-		
+		static ZipFile m_dataFile;
+
 		public void ParseFiles()
 		{
 			if (Application.isEditor)
@@ -100,10 +105,7 @@ namespace RTS
 			if (node == null) goto XMLError;
 			
 			if (node.Name == "Building")
-			{
-				BuildingPrefab prefab = new BuildingPrefab();
-				prefab.dataItem = a_zip;
-				
+			{			
 				// Name
 				XmlAttributeCollection attribs = node.Attributes;
 				if (attribs.Count != 1) goto XMLError;
@@ -112,20 +114,28 @@ namespace RTS
 				string ID = attrib.Value;
 				
 				// Duplicate check
-				if (m_buildingPrefabs.ContainsKey(ID))
+				if (m_res.prefabs.buildingPrefabs.ContainsKey(ID))
 				{
 					Debug.LogWarning("Prefab overwrite attempt detected - possible mod: " + ID);
 					return;
 				}
 				
+				// Create prefab
+				BuildingPrefab prefab = new BuildingPrefab();
+				prefab.dataItem = a_zip;
+				prefab.ID = ID;
+				
 				// Properties
 				XmlNodeList nodes = node.SelectNodes("Properties");
 				if (nodes.Count != 1) goto XMLError;
 				attribs = nodes[0].Attributes;
-				if (attribs.Count != 7) goto XMLError;
+				if (attribs.Count != 8) goto XMLError;
 				attrib = attribs.GetNamedItem("Name");
 				if (attrib == null) goto XMLError;
 				prefab.name = attrib.Value;
+				attrib = attribs.GetNamedItem("MenuID");
+				if (attrib == null) goto XMLError;
+				prefab.menuID = Int32.Parse(attrib.Value);
 				attrib = attribs.GetNamedItem("Cost");
 				if (attrib == null) goto XMLError;
 				prefab.cost = Int32.Parse(attrib.Value);
@@ -148,6 +158,8 @@ namespace RTS
 				prefab.bounds = new Vector3(float.Parse(attrib.Value.Split(',')[0]), float.Parse(attrib.Value.Split(',')[1]), float.Parse(attrib.Value.Split(',')[2]));
 				
 				// Tech		
+				prefab.techReqs = new List<string>();
+				prefab.techUpgrades = new List<BuildingPrefab.Upgrade>();
 				nodes = node.SelectNodes("Tech");
 				if (nodes.Count != 1) goto XMLError;
 				attribs = nodes[0].Attributes;
@@ -224,14 +236,14 @@ namespace RTS
 				if (attrib == null) goto XMLError;
 				prefab.cameoPath = attrib.Value;
 				
-				m_buildingPrefabs.Add(ID, prefab);
+				m_res.prefabs.buildingPrefabs.Add(ID, prefab);
 			}
 			else
 			{
 				UnitPrefab prefab = new UnitPrefab();
 				string ID = "";
 				
-				m_unitPrefabs.Add(ID, prefab);
+				m_res.prefabs.unitPrefabs.Add(ID, prefab);
 			}
 			
 			return;
@@ -251,6 +263,38 @@ namespace RTS
 			CryptoProvider crypto = new CryptoProvider();
 			crypto.EncryptFile(basePath + "/BaseData.Data.temp", basePath + "/BaseData.Data", "Rens");
 			File.Delete(basePath + "/BaseData.Data.temp");
+		}
+		
+		// Load an image.
+		static public Texture2D LoadImage(string a_path, bool a_dataFile)
+		{
+			Texture2D tex = null;
+			
+			if (a_dataFile)
+			{
+				List<ZipEntry> entries = m_dataFile.SelectEntries(a_path).ToList();
+				if (entries.Count == 1)
+				{
+					Ionic.Crc.CrcCalculatorStream stream = entries[0].OpenReader();
+					byte[] texBytes = new byte[stream.Length];
+					stream.Read(texBytes, 0, (int)stream.Length);
+					tex = new Texture2D(0, 0);
+					tex.LoadImage(texBytes);
+				}
+			}
+			else
+			{
+				FileStream texFile = File.OpenRead(Application.dataPath + "/mods/" + a_path);
+				if (texFile != null)
+				{
+					byte[] texBytes = new byte[texFile.Length];
+					texFile.Read(texBytes, 0, (int)texFile.Length);
+					tex = new Texture2D(0, 0);
+					tex.LoadImage(texBytes);
+				}
+			}
+			
+			return tex;
 		}
 	}
 }

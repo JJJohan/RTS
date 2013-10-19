@@ -4,29 +4,18 @@ namespace RTS
 {		
 	public partial class Main : MonoBehaviour 
 	{	
-		private Texture2D m_guiPanel;
 		private Texture2D m_guiSelect;
-		private GUIStyle m_gui;
-		private Minimap m_minimap;
+		private SidePanel m_sidePanel;
 		
 		void InitGUI()
 		{			
-			// RTS Panel
-			m_guiPanel = (Texture2D)UnityEngine.Resources.Load("Textures/panel");
+			// Area Selection Texture
 			m_guiSelect = (Texture2D)UnityEngine.Resources.Load("Textures/gray");
-		
-			// Minimap
-			GameObject obj = new GameObject();
-			m_minimap = obj.AddComponent<Minimap>();
 			
-			// GUI Style
-			m_gui = new GUIStyle();
-			m_gui.font = (Font)UnityEngine.Resources.Load("Fonts/coop");
-			m_gui.fontSize = 24;
-			m_gui.alignment = TextAnchor.MiddleCenter;
-			m_gui.normal.textColor = Color.white;
+			// Side Panel
+			m_sidePanel = new SidePanel();
 		}
-		
+
 		void OnGUI()
 		{		
 			// Draw selection rectangle.
@@ -34,30 +23,32 @@ namespace RTS
 			{
 				Vector3 mousePos = new Vector3(Input.mousePosition.x, Screen.height, 0.0f) - new Vector3(0.0f, Input.mousePosition.y, 0.0f);
 				GUI.DrawTexture(new Rect(m_clickPos.x, m_clickPos.y, mousePos.x - m_clickPos.x, mousePos.y - m_clickPos.y), m_guiSelect);
+				Line.Draw(m_clickPos, new Vector2(mousePos.x, m_clickPos.y));
+				Line.Draw(new Vector2(mousePos.x, m_clickPos.y), mousePos);
+				Line.Draw(mousePos, new Vector2(m_clickPos.x, mousePos.y));
+				Line.Draw(new Vector2(m_clickPos.x, mousePos.y), m_clickPos);
 			}
-				
-			// Draw scaled GUI.
-		    GUI.DrawTexture(ResizeGUI(new Rect(1920 - 240, 0, 240, 1080)), m_guiPanel);
-			m_minimap.Draw();
 			
-			// Draw power available / required.
-			GUI.Label(ResizeGUI(new Rect(1920 - 225, 265, 209, 27)), ((int)m_res.powerUsed).ToString() + "/" + ((int)m_res.power).ToString(), m_gui);
-			
-			// Draw available funds.
-			GUI.Label(ResizeGUI(new Rect(1920 - 225, 365, 209, 27)), ((int)m_res.funds).ToString(), m_gui);
+			// Draw the command interface.
+			m_sidePanel.Draw();
 		}
 		
 		
-		static public Rect ResizeGUI(Rect _rect)
+		static public Rect ResizeGUI(Rect a_rect)
 		{
-		    float FilScreenWidth = _rect.width / 1920;
+		    float FilScreenWidth = a_rect.width / 1920;
 		    float rectWidth = FilScreenWidth * Screen.width;
-		    float FilScreenHeight = _rect.height / 1080;
+		    float FilScreenHeight = a_rect.height / 1080;
 		    float rectHeight = FilScreenHeight * Screen.height;
-		    float rectX = (_rect.x / 1920) * Screen.width;
-		    float rectY = (_rect.y / 1080) * Screen.height;
+		    float rectX = (a_rect.x / 1920) * Screen.width;
+		    float rectY = (a_rect.y / 1080) * Screen.height;
 		 
-		    return new Rect(rectX,rectY,rectWidth,rectHeight);
+		    return new Rect(rectX, rectY, rectWidth, rectHeight);
+		}
+		
+		static public Vector2 ResizeGUI(Vector2 a_pos)
+		{
+		    return new Vector2((a_pos.x / 1920) * Screen.width, (a_pos.y / 1080) * Screen.height);
 		}
 	}
 }

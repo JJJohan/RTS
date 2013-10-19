@@ -6,6 +6,7 @@
 	<!-- Basic building properties. -->
 	<Properties
 		Name = "Construction Yard"
+		MenuID = "0"
 		Cost = "2000"
 		PowerUsage = "20"
 		BuildTime = "20"
