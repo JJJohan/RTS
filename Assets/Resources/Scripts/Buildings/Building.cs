@@ -6,48 +6,34 @@ namespace RTS
 	public abstract class Building : Selectable
 	{	
 		// Variables
-		protected int m_cost;
 		protected int m_power;
 		protected int m_buildTime;
-		protected Texture2D m_cameo;
-		protected float m_totalHealth;
-		protected float m_health;
-		protected float m_damage;
 		protected float m_buildPercent;
 		protected bool m_built;
 		protected bool m_repairing;
-		protected Vector3 m_position;
 		protected Vector3 m_rotation;
-		protected Vector3 m_textPos;
-		protected Vector3 m_offset;
-		protected Vector3 m_bounds;
-		protected Vector3 m_placeBounds;
-		protected Vector2 m_miniSize;
 		protected MeshFilter m_mesh;
 		protected MeshRenderer m_renderer;
 		private TextMesh m_text;
 		private GameObject m_ghost;
 		private BoxCollider m_collider;
 		private bool m_destroyed;
-		private GameObject m_miniIcon;
 		
 		// Functions
 		public float Health { get; set; }
+		public float HealthPercent() { return m_health / m_totalHealth; }
 		public float BuildPercent() { return m_buildPercent; }
 		public bool Repairing { get; set; }
 		public int Cost() { return m_cost; }
 		public int Power() { return m_power; }
 		public int BuildTime() { return m_buildTime; }
-		public Vector3 Offset() { return m_offset; }
 		public bool Built() { return m_built; }
 		public Vector3 Position { get; set; }
 		public Vector3 Rotation { get; set; }
-		public Vector3 PlacementBounds() { return m_placeBounds; }
 		public bool Destroyed() { return m_destroyed; }
 		
-		public void Start()
+		public override void Start()
 		{
-			m_textPos = new Vector3(0f, 10f, 0f);
 			m_collider = gameObject.AddComponent<BoxCollider>();
 			m_collider.size = m_mesh.mesh.bounds.size;
 			m_collider.size = new Vector3(m_collider.size.x, m_collider.size.y * 0.9f, m_collider.size.z);
@@ -56,13 +42,7 @@ namespace RTS
 			gameObject.layer = 10;
 			gameObject.tag = "Building";
 			
-			// Create minimap icon
-			m_miniIcon = GameObject.CreatePrimitive(PrimitiveType.Plane);
-			m_miniIcon.renderer.material = new Material(Shader.Find("Self-Illumin/Diffuse"));
-			m_miniIcon.renderer.material.color = Color.blue;
-			m_miniIcon.transform.localScale = new Vector3(m_miniSize.x, 1f, m_miniSize.y);
-			m_miniIcon.layer = 9;
-			m_miniIcon.transform.position = transform.position + new Vector3(0,50,0);
+			base.Start();
 		}
 		
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
@@ -73,7 +53,6 @@ namespace RTS
 			
 			// Create construction progress text
 			GameObject text = new GameObject();
-			text.transform.position = m_position + m_textPos;
 			MeshRenderer textRender = text.AddComponent<MeshRenderer>();
 			textRender.material = (Material)UnityEngine.Resources.Load("Fonts/coopMat");
 			textRender.material.shader = Shader.Find("GUI/Text Shader");
@@ -83,7 +62,7 @@ namespace RTS
 			m_text.text = "0%";
 			m_text.alignment = TextAlignment.Center;
 			m_text.anchor = TextAnchor.MiddleCenter;
-			m_text.transform.position = m_position + m_textPos;
+			m_text.transform.position = m_position + new Vector3(0f, m_mesh.mesh.bounds.size.y / 2, 0f);
 			
 			// Create ghost copy
 			m_ghost = new GameObject();
@@ -98,7 +77,7 @@ namespace RTS
 			m_ghost.transform.position = m_position;
 		}
 		
-		public virtual void Process(ref Resources a_res)
+		public override void Process(ref Resources a_res)
 		{
 			if (m_destroyed)
 				return;
@@ -120,7 +99,6 @@ namespace RTS
 					Destroy(m_ghost);
 					m_built = true;
 					m_buildPercent = m_buildTime;
-					m_health = m_totalHealth;
 				}
 				
 				// Update building position based on completion percentage.
@@ -130,10 +108,13 @@ namespace RTS
 				// Update percentage text.
 				if (m_text)
 				{
-					m_text.transform.LookAt(m_text.transform.position * 2 - Camera.main.transform.position);
+					m_text.transform.rotation = Camera.main.transform.rotation;// * new Quaternion(0.707f, 0f, 0f, 0.707f);
+					//m_text.transform.LookAt(m_text.transform.position * 2 - Camera.main.transform.position);
 					//m_text.transform.eulerAngles = new Vector3(0f, m_text.transform.eulerAngles.y, m_text.transform.eulerAngles.z);
 					m_text.text = ((int)(((m_buildPercent / m_buildTime) * 100) + .5f)).ToString() + "%";
 				}
+				
+				base.Process(ref a_res);
 			}
 			
 			// Repair building.
@@ -171,6 +152,8 @@ namespace RTS
 			m_miniIcon.renderer.material.color = Color.white;
 			
 			// TODO: Play selection sound.
+			
+			base.Select();
 		}
 		
 		public override void Deselect()
@@ -180,9 +163,11 @@ namespace RTS
 				
 			gameObject.renderer.material.color = Color.white;
 			m_miniIcon.renderer.material.color = Color.blue;
+			
+			base.Deselect();
 		}
 		
-		public void OnDestroy()
+		public override void OnDestroy()
 		{
 			if (gameObject)
 				Destroy(gameObject);
@@ -195,6 +180,8 @@ namespace RTS
 			
 			if (m_miniIcon)
 				Destroy(m_miniIcon);
+			
+			base.OnDestroy();
 		}
 	}
 }

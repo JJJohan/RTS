@@ -25,7 +25,7 @@ namespace RTS
 		}
 		
 		void OnGUI()
-		{
+		{		
 			// Draw selection rectangle.
 			if (m_clickPos.x > -0.5f)
 			{
