@@ -1,8 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace RTS
 {	
+	public class UserData : MonoBehaviour
+	{
+		public object data;
+	}
+	
 	public class Resources
 	{
 		public Resources()
@@ -19,14 +25,14 @@ namespace RTS
 		public Prefabs prefabs;
 	}
 	
-	public partial class Main : MonoBehaviour 
+	public static class Main
 	{		
-		public List<Unit> m_unitList;
-		public List<Building> m_buildingList;
-		private Resources m_res;
+		public static List<Unit> m_unitList;
+		public static List<Building> m_buildingList;
+		public static Resources m_res;
 		public static Event m_event;
-		
-		void Start()
+
+		public static void Init()
 		{	
 			m_unitList = new List<Unit>(256);
 			m_buildingList = new List<Building>(64);
@@ -35,21 +41,13 @@ namespace RTS
 			m_res.power = 0;
 			m_res.powerUsed = 0;
 			
-			InitInput();
-			InitGUI();
-			ParseFiles();
-
-			//////////
-			// TEMP //
-			//////////
-			
-			CreateBuildingGhost("CONSTRUCTION_YARD");		
-			
-			//////////
+			InputHandler.InitInput();
+			UserInterface.InitGUI();
+			FileParser.ParseFiles();
 		}
 		
 		// Update is called once per frame
-		void Update() 
+		public static void Update() 
 		{
 			List<Selectable> m_destroyList = new List<Selectable>();
 			
@@ -60,6 +58,7 @@ namespace RTS
 				if (building.Destroyed())
 				{
 					m_res.powerUsed -= building.Power();
+					building.Destroy();
 					m_destroyList.Add(building);
 				}
 			}
@@ -73,66 +72,72 @@ namespace RTS
 			// Destroy units queued for removal.
 			for (int i = 0; i < m_destroyList.Count; ++i)
 			{
-				if (m_destroyList[i].tag == "Building")
+				if (m_destroyList[i].Tag() == "Building")
 					m_buildingList.Remove((Building)m_destroyList[i]);
-				else if (m_destroyList[i].tag == "Unit")
+				else if (m_destroyList[i].Tag() == "Unit")
 					m_unitList.Remove((Unit)m_destroyList[i]);
-				
-				Destroy (m_destroyList[i]);
 			}
 			
 			// Update GUI
-			m_sidePanel.Update(m_res);
+			UserInterface.Update();
 			
 			// Update Input
-			ProcessInput();
+			InputHandler.ProcessInput();
+		}
+		
+		// Draw interface.
+		public static void Draw()
+		{
+			UserInterface.Draw();
 		}
 		
 		// Place a building.
-		Building CreateBuilding(BuildingPrefab a_prefab, Vector3 a_pos, Vector3 a_rot)
-		{			
-			if (a_prefab.cost <= m_res.funds)
-			{
-				// Initialise the building.
-				GameObject obj = new GameObject();
-				BuildingTemplate template = obj.AddComponent<BuildingTemplate>();
-				template.Load(a_prefab, ref m_dataFile);
-				template.Construct(a_pos, a_rot);
-				m_buildingList.Add(template);
-				MinimapIcon icon;
-				template.GetIcon(out icon);
-				m_sidePanel.GetMinimap().AddIcon(ref icon);
-				
-				// Update available resources.
-				m_res.powerUsed += template.Power();
-				m_res.buildings.Add(a_prefab.ID);
-				
-				return template;
-			}
+		public static Building CreateBuilding(BuildingPrefab a_prefab, Vector3 a_pos, Vector3 a_rot)
+		{				
+			// Initialise the building.;
+			BuildingTemplate template = new BuildingTemplate();
+			Building building = template.Load(a_prefab);
+			building.Construct(a_pos, a_rot);
+			m_buildingList.Add(building);
+			MinimapIcon icon;
+			building.GetIcon(out icon);
+			UserInterface.m_sidePanel.m_minimap.AddIcon(ref icon);
 			
-			return null;
+			// Update available resources.
+			m_res.powerUsed += building.Power();
+			m_res.buildings.Add(a_prefab.ID);
+			
+			return building;
 		}
 		
 		// Create a ghost building to show where it is being placed.
-		void CreateBuildingGhost(string a_name)
+		public static void CreateBuildingGhost(SidePanel a_sidePanel, BuildingArgs a_events)
 		{
-			// Fetch prefab
-			BuildingPrefab prefab;
-			if (m_res.prefabs.buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out prefab))
+			int cost = a_events.prefab.cost;
+			if (InputHandler.m_cursorBuilding) cost += InputHandler.m_cursorBuilding.GetComponent<GhostBuilding>().m_prefab.cost;
+			if (cost > m_res.funds)
+				return;
+		
+			// Discard any previous ghost object.
+			if (InputHandler.m_cursorBuilding != null)
 			{
-				// Instantiate the ghost.
-				m_cursorMode = Cursor.BUILD;
-				m_selectionType = Selection.NONE;
-				m_cursorBuilding = new GameObject();
-				GhostBuilding script = m_cursorBuilding.AddComponent<GhostBuilding>();
-				script.Create(prefab, ref m_dataFile);
+				m_res.funds += InputHandler.m_cursorBuilding.GetComponent<GhostBuilding>().m_prefab.cost;
+				UnityEngine.Object.Destroy(InputHandler.m_cursorBuilding);
 			}
+			
+			// Instantiate the ghost.
+			m_res.funds -= cost;
+			InputHandler.m_cursorMode = Cursor.BUILD;
+			InputHandler.m_selectionType = Selection.NONE;
+			InputHandler.m_cursorBuilding = new GameObject();
+			GhostBuilding script = InputHandler.m_cursorBuilding.AddComponent<GhostBuilding>();
+			script.Create(a_events.prefab);
 		}
 		
 		// Place a unit.
-		void CreateUnit(string a_name, Vector3 a_pos)
+		public static void CreateUnit(string a_name, Vector3 a_pos)
 		{			
-			GameObject obj = (GameObject)Instantiate(UnityEngine.Resources.Load(a_name));
+			/*GameObject obj = (GameObject)Instantiate(UnityEngine.Resources.Load(a_name));
 			if (obj)
 			{
 				if (obj == null) throw new UnityException();
@@ -143,7 +148,7 @@ namespace RTS
 			else
 			{
 				throw new UnityException();
-			}
+			}*/
 		}
 	}
 }

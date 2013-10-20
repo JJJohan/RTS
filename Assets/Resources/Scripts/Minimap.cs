@@ -3,30 +3,27 @@ using System.Collections.Generic;
 
 namespace RTS
 {	
-	public class Minimap : MonoBehaviour
+	public class Minimap
 	{
+		private GameObject m_gameObject;
 		private float m_scale;
 		private Material m_minimap;
 		private Camera m_camera;
 		private List<MinimapIcon> m_icons;
 		private Rect m_bounds;
 		
-		void OnPostRender()
-		{
-			Destroy (m_camera);
-		}
-		
-		void Start()
+		public Minimap()
 		{
 			// Init minimap
+			m_gameObject = new GameObject();
 			m_icons = new List<MinimapIcon>();
-			m_bounds = Main.ResizeGUI(new Rect(1920 - 224, 16, 209, 184));
+			m_bounds = UserInterface.ResizeGUI(new Rect(1920 - 224, 16, 209, 184));
 				
 			// Create the minimap render texture
 			m_minimap = (Material)UnityEngine.Resources.Load("textures/minimapRT");
 			
 			// Create Camera
-			m_camera = gameObject.AddComponent<Camera>();
+			m_camera = m_gameObject.AddComponent<Camera>();
 			m_camera.isOrthoGraphic = true;
 			m_camera.orthographicSize = 500f;
 			m_camera.nearClipPlane = 10f;
@@ -36,10 +33,10 @@ namespace RTS
 			m_camera.targetTexture = (RenderTexture)m_minimap.mainTexture;
 			m_camera.rect = new Rect(0f, 0f, 1f, 1f);
 			m_camera.cullingMask = 1 << LayerMask.NameToLayer("Terrain");
-			gameObject.transform.position = new Vector3(0f, 100f, 0f);
-			gameObject.transform.eulerAngles = new Vector3(90f, 0f, 0f);
-			gameObject.layer = LayerMask.NameToLayer("Minimap");
-			gameObject.name = "Minimap";
+			m_gameObject.transform.position = new Vector3(0f, 100f, 0f);
+			m_gameObject.transform.eulerAngles = new Vector3(90f, 0f, 0f);
+			m_gameObject.layer = LayerMask.NameToLayer("Minimap");
+			m_gameObject.name = "Minimap";
 		}
 		
 		public void AddIcon(ref MinimapIcon a_icon)
@@ -85,6 +82,9 @@ namespace RTS
 			camPos = WorldToMap(camPos);
 			Line.Draw(camPos, camPos + left2, Color.white);
 			Line.Draw(camPos, camPos + right2, Color.white);
+			
+			if (m_gameObject)
+				Object.Destroy(m_gameObject);
 		}
 	}
 }

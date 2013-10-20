@@ -12,9 +12,11 @@ namespace RTS
 		private Texture2D m_up;
 		private Texture2D m_down;
 		private Texture2D m_current;
+		private Material m_mat;
 		private bool m_locked;
 		
-		public bool Locked { get; set; }
+		public Material GetMaterial() { return m_mat; }
+		public bool Locked() { return m_locked; }
 		
 		public Button(Texture2D a_up, Texture2D a_down, Rect a_bounds)
 		{
@@ -23,10 +25,25 @@ namespace RTS
 			m_down = a_down;
 			m_bounds = a_bounds;
 			m_current = m_up;
+			m_mat = new Material(Shader.Find("Billboard"));
+		}
+		
+		public void Lock(bool a_locked)
+		{
+			if (m_locked == a_locked)
+				return;
+
+			if (m_locked = a_locked)
+				m_mat.color = new Color(0.5f, 0.5f, 0.5f);
+			else
+				m_mat.color = Color.white;
 		}
 		
 		public int Process(Event a_event)
 		{
+			if (m_locked)
+				return UNPRESSED;
+			
 			if (a_event.type == EventType.MouseDown)
 			{
 				return Down(a_event.mousePosition);
@@ -65,7 +82,6 @@ namespace RTS
 			
 	 		if (m_bounds.Contains(a_pos))
 			{
-				Debug.Log("Pressed");
 				m_current = m_down;
 				return DOWN;
 			}
@@ -75,7 +91,7 @@ namespace RTS
 		
 		public void Draw()
 		{
-			Graphics.DrawTexture(m_bounds, m_current, SidePanel.m_guiMat);
+			Graphics.DrawTexture(m_bounds, m_current, m_mat);
 		}
 	}
 }

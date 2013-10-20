@@ -14,13 +14,12 @@ namespace RTS
 		private Vector2 m_dims;
 		private Vector3[] m_points;
 		private bool m_copy = false;
-		BuildingPrefab m_prefab;
+		public BuildingPrefab m_prefab;
 		
-		public BuildingPrefab Prefab() { return m_prefab; }
 		public bool Placeable() { return (m_placeable && !m_air); }
 		
 		// Create ghost building.
-		public void Create(BuildingPrefab a_prefab, ref ZipFile a_dataFile)
+		public void Create(BuildingPrefab a_prefab)
 		{
 			MeshFilter filter = gameObject.AddComponent<MeshFilter>();
 			MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
@@ -33,13 +32,13 @@ namespace RTS
 			ObjImporter importer = new ObjImporter();
 			if (a_prefab.dataItem)
 			{
-				List<ZipEntry> entries = a_dataFile.SelectEntries(a_prefab.modelPath).ToList();
+				List<ZipEntry> entries = FileParser.m_dataFile.SelectEntries(a_prefab.modelPath).ToList();
 				if (entries.Count == 1)
 				{
 					filter.mesh = importer.ImportStream(entries[0].OpenReader());
 				}
 				
-				entries = a_dataFile.SelectEntries(a_prefab.texturePath).ToList();
+				entries = FileParser.m_dataFile.SelectEntries(a_prefab.texturePath).ToList();
 				if (entries.Count == 1)
 				{
 					Ionic.Crc.CrcCalculatorStream stream = entries[0].OpenReader();

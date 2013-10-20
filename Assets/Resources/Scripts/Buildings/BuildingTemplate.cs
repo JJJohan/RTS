@@ -7,33 +7,30 @@ using System.Linq;
 
 namespace RTS
 {
-	public class BuildingTemplate : Building
+	public class BuildingTemplate
 	{		
-		public void Load(BuildingPrefab a_prefab, ref ZipFile a_dataFile)
-		{			
-			m_mesh = gameObject.AddComponent<MeshFilter>();
-			m_renderer = gameObject.AddComponent<MeshRenderer>();
-			gameObject.name = a_prefab.name;
-				
+		public Building Load(BuildingPrefab a_prefab)
+		{						
 			// Properties
-			m_totalHealth = a_prefab.health;
-			m_power = a_prefab.powerUsage;
-			m_buildTime = a_prefab.buildTime;
-			m_cost = a_prefab.cost;		
-			m_miniSize = new Vector2(6f, 6f);
+			Building.Properties properties = new Building.Properties();
+			properties.health = a_prefab.health;
+			properties.power = a_prefab.powerUsage;
+			properties.buildTime = a_prefab.buildTime;
+			properties.cost = a_prefab.cost;		
+			properties.miniSize = new Vector2(6f, 6f);		
 			
 			// Texture
-			renderer.material.mainTexture = Main.LoadImage(a_prefab.texturePath, a_prefab.dataItem);
-			m_renderer.material.shader = Shader.Find("Diffuse");
+			Texture2D texture = FileParser.LoadImage(a_prefab.texturePath, a_prefab.dataItem);
+			Mesh mesh = null;
 			
 			if (a_prefab.dataItem)
 			{
 				// Model
-				List<ZipEntry> entries = a_dataFile.SelectEntries(a_prefab.modelPath).ToList();
+				List<ZipEntry> entries = FileParser.m_dataFile.SelectEntries(a_prefab.modelPath).ToList();
 				if (entries.Count == 1)
 				{
 					ObjImporter importer = new ObjImporter();
-					m_mesh.mesh = importer.ImportStream(entries[0].OpenReader());
+					mesh = importer.ImportStream(entries[0].OpenReader());
 				}
 			}
 			else
@@ -42,11 +39,18 @@ namespace RTS
 				if (File.Exists(Application.dataPath + "/mods/" + a_prefab.modelPath))
 				{
 					ObjImporter importer = new ObjImporter();
-					m_mesh.mesh = importer.ImportFile(Application.dataPath + "/mods/" + a_prefab.modelPath);
+					mesh = importer.ImportFile(Application.dataPath + "/mods/" + a_prefab.modelPath);
 				}
 			}
 			
-			base.Init();
+			// Type
+			Building building = null;
+			if (a_prefab.type == Building.Type.DEFAULT)
+			{
+				building = new Building(properties, mesh, texture);	
+			}
+			
+			return building;
 		}
 	}
 }

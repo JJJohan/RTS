@@ -15,13 +15,15 @@ namespace RTS
 		public bool Zoomed() { if (m_zoomed) { m_zoomed = false; return true; } else {return false; } }
 		
 		void Start()
-		{	
-
+		{
+			Main.Init();
 		}
 		
 		// Update is called once per frame
 		void Update() 
 		{
+			Main.Update();
+			
 			bool shift = (Input.GetKey(KeyCode.LeftShift) || Input.GetKey (KeyCode.RightShift));
 			float speed = m_moveSpeed * Time.deltaTime * (m_height * 3);
 			if (shift) speed *= 2.0f;
@@ -58,6 +60,15 @@ namespace RTS
 			
 			camera.transform.localEulerAngles = new Vector3(55 + tiltDiff, camera.transform.localEulerAngles.y, camera.transform.localEulerAngles.z);
 			camera.transform.position = new Vector3(camera.transform.position.x, m_height, camera.transform.position.z);
+		}
+		
+		void OnGUI()
+		{
+			// Draw interface
+			Main.Draw();
+			
+			// Get event
+			Main.m_event = Event.current;
 		}
 	}
 }

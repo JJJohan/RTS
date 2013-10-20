@@ -3,8 +3,9 @@ using UnityEngine;
 namespace RTS
 {	
 	// Base class of a selectable unit in the RTS project.	
-	public abstract class Selectable : MonoBehaviour
+	public abstract class Selectable
 	{
+		protected GameObject m_gameObject;
 		protected Vector3 m_position;
 		protected int m_cost;
 		protected Texture2D m_cameo;
@@ -18,15 +19,19 @@ namespace RTS
 		private GameObject m_healthFront;
 		private GameObject m_healthBack;
 		
+		public GameObject GetObject() { return m_gameObject; }
+		public string Tag() { return m_gameObject.tag; }
+		
 		public void GetIcon(out MinimapIcon a_icon)
 		{
 			a_icon = m_icon;
 		}
 		
-		public virtual void Init()
+		public Selectable()
 		{
-			// Create minimap icon				
-			m_icon = new MinimapIcon(m_miniSize, true);
+			m_gameObject = new GameObject();
+			UserData data = m_gameObject.AddComponent<UserData>();
+			data.data = this;
 		}
 		
 		public virtual void Process(ref Resources a_ref)
@@ -60,7 +65,7 @@ namespace RTS
 			m_icon.SetColour(Color.white);
 			
 			// Find largest scale vector.
-			Vector3 bounds = gameObject.GetComponent<MeshFilter>().mesh.bounds.size;
+			Vector3 bounds = m_gameObject.GetComponent<MeshFilter>().mesh.bounds.size;
 			float largest = bounds.x;
 			if (bounds.y > largest) largest = bounds.y;
 			if (bounds.z > largest) largest = bounds.z;
@@ -100,21 +105,21 @@ namespace RTS
 			m_icon.SetColour(Color.blue);
 			
 			// Clear selection box.
-			Destroy (m_selectionBox);
-			Destroy (m_healthFront);
-			Destroy (m_healthBack);
+			Object.Destroy (m_selectionBox);
+			Object.Destroy (m_healthFront);
+			Object.Destroy (m_healthBack);
 		}
 		
-		public virtual void OnDestroy()
+		public virtual void Destroy()
 		{
 			if (m_selectionBox)
-				Destroy (m_selectionBox);
+				Object.Destroy (m_selectionBox);
 			
 			if (m_healthFront)
-				Destroy (m_healthFront);
+				Object.Destroy (m_healthFront);
 			
 			if (m_healthBack)
-				Destroy (m_healthBack);
+				Object.Destroy (m_healthBack);
 		}
 	}
 }

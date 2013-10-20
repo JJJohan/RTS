@@ -82,6 +82,7 @@ public class Billboard : MonoBehaviour
 		if (a_texture != "")
 			renderer.material.mainTexture = (Texture2D)Resources.Load(a_texture);
 		renderer.material.shader = Shader.Find("Billboard");
+		renderer.material.color = Color.white;
 		
 		gameObject.transform.rotation = Camera.main.transform.rotation * new Quaternion(0.707f, 0f, 0f, 0.707f);
 	}

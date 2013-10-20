@@ -1,7 +1,7 @@
 Shader "Billboard" {
 	Properties {
 		_MainTex ("Font Texture", 2D) = "white" {}
-		_Color ("Text Color", Color) = (1,1,1,1)
+		_Color ("Main Color", Color) = (1,1,1,1)
 	}
 
 	SubShader {
@@ -20,7 +20,6 @@ Shader "Billboard" {
 
 			struct appdata_t {
 				float4 vertex : POSITION;
-				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
 			};
 
@@ -38,16 +37,14 @@ Shader "Billboard" {
 			{
 				v2f o;
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-				o.color = v.color * _Color;
+				o.color = _Color;
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				return o;
 			}
 
 			fixed4 frag (v2f i) : COLOR
 			{
-				fixed4 col = i.color;
-				col = tex2D(_MainTex, i.texcoord);
-				return col;
+				return tex2D(_MainTex, i.texcoord) * i.color;
 			}
 			ENDCG 
 		}

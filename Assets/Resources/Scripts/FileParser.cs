@@ -31,6 +31,7 @@ namespace RTS
 		
 		public string ID;
 		public string name;
+		public int type;
 		public int menuID;
 		public int cost;
 		public int powerUsage;
@@ -51,11 +52,11 @@ namespace RTS
 	{
 	}
 	
-	public partial class Main : MonoBehaviour 
+	public static class FileParser
 	{
-		static ZipFile m_dataFile;
+		public static ZipFile m_dataFile;
 
-		public void ParseFiles()
+		public static void ParseFiles()
 		{
 			if (Application.isEditor)
 				Compress();
@@ -83,7 +84,7 @@ namespace RTS
 			}
 		}
 		
-		public void ParseXML(string a_name, bool a_zip)
+		public static void ParseXML(string a_name, bool a_zip)
 		{
 			XmlDocument xml = new XmlDocument();
 			if (a_zip)
@@ -114,7 +115,7 @@ namespace RTS
 				string ID = attrib.Value;
 				
 				// Duplicate check
-				if (m_res.prefabs.buildingPrefabs.ContainsKey(ID))
+				if (Main.m_res.prefabs.buildingPrefabs.ContainsKey(ID))
 				{
 					Debug.LogWarning("Prefab overwrite attempt detected - possible mod: " + ID);
 					return;
@@ -124,6 +125,7 @@ namespace RTS
 				BuildingPrefab prefab = new BuildingPrefab();
 				prefab.dataItem = a_zip;
 				prefab.ID = ID;
+				prefab.type = Building.Type.DEFAULT;
 				
 				// Properties
 				XmlNodeList nodes = node.SelectNodes("Properties");
@@ -156,6 +158,11 @@ namespace RTS
 				if (attrib == null) goto XMLError;
 				if (attrib.Value.Split(',').Length != 3) goto XMLError;
 				prefab.bounds = new Vector3(float.Parse(attrib.Value.Split(',')[0]), float.Parse(attrib.Value.Split(',')[1]), float.Parse(attrib.Value.Split(',')[2]));
+				attrib = attribs.GetNamedItem("Type");
+				if (attrib != null)
+				{
+					// Set Types
+				}
 				
 				// Tech		
 				prefab.techReqs = new List<string>();
@@ -236,14 +243,14 @@ namespace RTS
 				if (attrib == null) goto XMLError;
 				prefab.cameoPath = attrib.Value;
 				
-				m_res.prefabs.buildingPrefabs.Add(ID, prefab);
+				Main.m_res.prefabs.buildingPrefabs.Add(ID, prefab);
 			}
 			else
 			{
 				UnitPrefab prefab = new UnitPrefab();
 				string ID = "";
 				
-				m_res.prefabs.unitPrefabs.Add(ID, prefab);
+				Main.m_res.prefabs.unitPrefabs.Add(ID, prefab);
 			}
 			
 			return;
@@ -252,7 +259,7 @@ namespace RTS
 				Debug.LogError("Invalid XML file: " + a_name);
 		}
 		
-		public void Compress()
+		public static void Compress()
 		{
 			string basePath = Application.dataPath;
 			
@@ -266,7 +273,7 @@ namespace RTS
 		}
 		
 		// Load an image.
-		static public Texture2D LoadImage(string a_path, bool a_dataFile)
+		public static Texture2D LoadImage(string a_path, bool a_dataFile)
 		{
 			Texture2D tex = null;
 			
