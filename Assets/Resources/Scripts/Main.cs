@@ -24,6 +24,7 @@ namespace RTS
 		public List<Unit> m_unitList;
 		public List<Building> m_buildingList;
 		private Resources m_res;
+		public static Event m_event;
 		
 		void Start()
 		{	

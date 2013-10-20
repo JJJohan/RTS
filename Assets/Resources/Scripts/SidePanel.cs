@@ -6,31 +6,36 @@ namespace RTS
 {			
 	public class SidePanel
 	{	
-		private struct Button
+		private struct PrefabButton
 		{
 			public BuildingPrefab prefab;
-			public Material cameo;
+			public Texture2D cameo;
 		}
 		
+		public static Material m_guiMat;
+		
 		private Minimap m_minimap;
-		private GUIStyle m_gui;
+		private GUIStyle m_textStyle;
 		private Texture2D m_guiPanel;
-		//private Texture2D m_guiLeft;
-		//private Texture2D m_guiRight;
+		private Button m_buttonLeft;
+		private Button m_buttonRight;
 		//private Texture2D m_guiUpgrade;
 		private Resources m_res;
 		private int m_buildingCount;
 		private int m_index;
 		private List<Button> m_buttons;
+		private List<PrefabButton> m_prefabButtons;
 		private static Rect[] m_positions;
-		
+		private static Rect[] m_backPositions;
+
 		public Minimap GetMinimap() { return m_minimap; }
 		
 		public SidePanel()
 		{
 			// Init
 			m_index = 0;
-			m_buttons = new List<Button>();
+			m_prefabButtons = new List<PrefabButton>();
+			
 			m_positions = new Rect[8];
 			m_positions[0] = Main.ResizeGUI(new Rect(1920 - 224, 452, 100, 100));
 			m_positions[1] = Main.ResizeGUI(new Rect(1920 - 116, 452, 100, 100));
@@ -41,18 +46,46 @@ namespace RTS
 			m_positions[6] = Main.ResizeGUI(new Rect(1920 - 224, 779, 100, 100));
 			m_positions[7] = Main.ResizeGUI(new Rect(1920 - 116, 779, 100, 100));
 			
-			// GUI Style
-			m_gui = new GUIStyle();
-			m_gui.font = (Font)UnityEngine.Resources.Load("Fonts/coop");
-			m_gui.fontSize = 24;
-			m_gui.alignment = TextAnchor.MiddleCenter;
-			m_gui.normal.textColor = Color.white;
+			m_backPositions = new Rect[8];
+			m_backPositions[0] = Main.ResizeGUI(new Rect(1920 - 228, 448, 108, 108));
+			m_backPositions[1] = Main.ResizeGUI(new Rect(1920 - 120, 448, 108, 108));
+			m_backPositions[2] = Main.ResizeGUI(new Rect(1920 - 228, 556, 108, 108));
+			m_backPositions[3] = Main.ResizeGUI(new Rect(1920 - 120, 556, 108, 108));
+			m_backPositions[4] = Main.ResizeGUI(new Rect(1920 - 228, 666, 108, 108));
+			m_backPositions[5] = Main.ResizeGUI(new Rect(1920 - 120, 666, 108, 108));
+			m_backPositions[6] = Main.ResizeGUI(new Rect(1920 - 228, 775, 108, 108));
+			m_backPositions[7] = Main.ResizeGUI(new Rect(1920 - 120, 775, 108, 108));
+			
+			// Text GUI Style
+			m_textStyle = new GUIStyle();
+			m_textStyle.font = (Font)UnityEngine.Resources.Load("Fonts/coop");
+			m_textStyle.fontSize = 24;
+			m_textStyle.alignment = TextAnchor.MiddleCenter;
+			m_textStyle.normal.textColor = Color.white;
 			
 			// Panel Textures
+			m_guiMat = new Material(Shader.Find("Billboard"));
 			m_guiPanel = (Texture2D)UnityEngine.Resources.Load("Textures/panel");
-			//m_guiLeft = (Texture2D)UnityEngine.Resources.Load("Textures/panel_left");
-			//m_guiRight = (Texture2D)UnityEngine.Resources.Load("Textures/panel_right");
-			//m_guiUpgrade = (Texture2D)UnityEngine.Resources.Load("Textures/panel_upgrade");
+			
+			// Left Button
+			Texture2D leftUp = (Texture2D)UnityEngine.Resources.Load("Textures/panel_left");
+			Texture2D leftDown = (Texture2D)UnityEngine.Resources.Load("Textures/panel_left_down");
+			m_buttonLeft = new Button(leftUp, leftDown, Main.ResizeGUI(new Rect(1920 - 234, 898, 26, 63)));
+			
+			// Right Button
+			Texture2D rightUp = (Texture2D)UnityEngine.Resources.Load("Textures/panel_right");
+			Texture2D rightDown = (Texture2D)UnityEngine.Resources.Load("Textures/panel_right_down");
+			m_buttonRight = new Button(rightUp, rightDown, Main.ResizeGUI(new Rect(1920 - 34, 898, 26, 63)));
+				
+			// Main Buttons
+			Texture2D buttonUp = (Texture2D)UnityEngine.Resources.Load("Textures/panel_button");
+			Texture2D buttonDown = (Texture2D)UnityEngine.Resources.Load("Textures/panel_button_down");
+			m_buttons = new List<Button>();
+			for (int i = 0; i < 8; ++i)
+			{
+				Button button = new Button(buttonUp, buttonDown, m_backPositions[i]);
+				m_buttons.Add(button);
+			}
 			
 			// Minimap
 			GameObject minimap = new GameObject();
@@ -67,12 +100,43 @@ namespace RTS
 				m_buildingCount = m_res.buildings.Count;
 				ProcessBuildingList();
 			}
+			
+			// Update buttons
+			if (Main.m_event != null)
+			{
+				// Left & Right Arrows
+				if (m_index > 0)
+				{
+					if (m_buttonLeft.Process(Main.m_event) == Button.UP)
+					{
+						--m_index;
+					}
+				}
+				if (m_index < m_prefabButtons.Count / 8)
+				{
+					if (m_buttonRight.Process(Main.m_event) == Button.UP)
+					{
+						++m_index;
+					}
+				}
+				
+				// Update main buttons
+				for (int i = 0; i < 8; ++i)
+				{
+					int index = i + (m_index * 8);
+					if (index >= m_prefabButtons.Count) break;
+					if (m_buttons[i].Process(Main.m_event) == Button.UP)
+					{
+						
+					}
+				}
+			}
 		}
 		
 		private void ProcessBuildingList()
 		{
 			// Clear button list
-			m_buttons.Clear();
+			m_prefabButtons.Clear();
 			
 			// Check against building tech requirements.
 			foreach (string key in m_res.prefabs.buildingPrefabs.Keys)
@@ -97,16 +161,15 @@ namespace RTS
 				// Add buttons if requirements are met.
 				if (reqs == 0)
 				{
-					Button button = new Button();
+					PrefabButton button = new PrefabButton();
 					button.prefab = prefab;
-					button.cameo = new Material(Shader.Find("Billboard"));
-					button.cameo.mainTexture = Main.LoadImage(prefab.cameoPath, prefab.dataItem);
-					m_buttons.Add(button);
+					button.cameo = Main.LoadImage(prefab.cameoPath, prefab.dataItem);
+					m_prefabButtons.Add(button);
 				}
 			}
 			
 			// Order buttons
-			m_buttons.Sort((x, y) => x.prefab.menuID.CompareTo(y.prefab.menuID));
+			m_prefabButtons.Sort((x, y) => x.prefab.menuID.CompareTo(y.prefab.menuID));
 		}
 		
 		public void Draw()
@@ -117,23 +180,39 @@ namespace RTS
 			
 			// Draw power available / required.
 			if (m_res.powerUsed > m_res.power)
-				m_gui.normal.textColor = Color.red;
+				m_textStyle.normal.textColor = Color.red;
 			else if (m_res.power - m_res.powerUsed < 10)
-				m_gui.normal.textColor = Color.yellow;
+				m_textStyle.normal.textColor = Color.yellow;
 			else
-				m_gui.normal.textColor = Color.white;
-			GUI.Label(Main.ResizeGUI(new Rect(1920 - 225, 265, 209, 27)), ((int)m_res.powerUsed).ToString() + "/" + ((int)m_res.power).ToString(), m_gui);
-			m_gui.normal.textColor = Color.white;
+				m_textStyle.normal.textColor = Color.white;
+			GUI.Label(Main.ResizeGUI(new Rect(1920 - 225, 265, 209, 27)), ((int)m_res.powerUsed).ToString() + " / " + ((int)m_res.power).ToString(), m_textStyle);
+			m_textStyle.normal.textColor = Color.white;
 			
 			// Draw available funds.
-			GUI.Label(Main.ResizeGUI(new Rect(1920 - 225, 365, 209, 27)), ((int)m_res.funds).ToString(), m_gui);
+			GUI.Label(Main.ResizeGUI(new Rect(1920 - 225, 365, 209, 27)), ((int)m_res.funds).ToString(), m_textStyle);
 			
 			// Draw buttons.
 			for (int i = 0; i < 8; ++i)
 			{
-				int index = i + m_index;
-				if (index >= m_buttons.Count) break;
-				Graphics.DrawTexture(m_positions[i], m_buttons[index].cameo.mainTexture, m_buttons[index].cameo);
+				int index = i + (m_index * 8);
+				if (index >= m_prefabButtons.Count) break;
+				m_buttons[i].Draw();
+				Graphics.DrawTexture(m_positions[i], m_prefabButtons[index].cameo, m_guiMat);
+			}
+			
+			// Draw page count and buttons
+			if (m_prefabButtons.Count > 8)
+			{
+				if (m_index > 0)
+				{
+					m_buttonLeft.Draw();
+				}
+				if (m_index < m_prefabButtons.Count/8)
+				{
+					m_buttonRight.Draw();
+				}
+					
+				GUI.Label(Main.ResizeGUI(new Rect(1920 - 172, 914, 100, 27)), m_index + 1 + " / " + (m_prefabButtons.Count/8 + 1), m_textStyle);	
 			}
 		}
 	}
