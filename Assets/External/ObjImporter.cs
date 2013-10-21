@@ -1,49 +1,41 @@
 // Publically provided by Unity community.
 // http://wiki.unity3d.com/index.php?title=ObjImporter
-
 /* This version of ObjImporter first reads through the entire file, getting a count of how large
  * the final arrays will be, and then uses standard arrays for everything (as opposed to ArrayLists
  * or any other fancy things). 
  */
- 
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
- 
-public class ObjImporter {
- 
+
+public static class ObjImporter
+{
     private struct meshStruct
     {
         public Vector3[] vertices;
         public Vector3[] normals;
         public Vector2[] uv;
-        public Vector2[] uv1;
-        public Vector2[] uv2;
         public int[] triangles;
-        public int[] faceVerts;
-        public int[] faceUVs;
         public Vector3[] faceData;
-        public string name;
         public string objFile;
     }
- 
-	public Mesh ImportStream (Stream stream)
-	{
-		meshStruct newMesh = createMeshStructFromStream(stream);
-		return ImportFile(ref newMesh);
-	}
-	
-    // Use this for initialization
-	public Mesh ImportFile (string filePath) 
-	{
+
+    public static Mesh ImportStream(Stream stream)
+    {
+        meshStruct newMesh = createMeshStructFromStream(stream);
+        return ImportFile(ref newMesh);
+    }
+
+    public static Mesh ImportFile(string filePath)
+    {
         meshStruct newMesh = createMeshStructFromFile(filePath);
-		return ImportFile(ref newMesh);
-	}
-	
-	private Mesh ImportFile (ref meshStruct newMesh)
-	{
+        return ImportFile(ref newMesh);
+    }
+
+    private static Mesh ImportFile(ref meshStruct newMesh)
+    {
         populateMeshStruct(ref newMesh);
  
         Vector3[] newVerts = new Vector3[newMesh.faceData.Length];
@@ -53,7 +45,7 @@ public class ObjImporter {
         /* The following foreach loops through the facedata and assigns the appropriate vertex, uv, or normal
          * for the appropriate Unity mesh array.
          */
-        foreach (Vector3 v in newMesh.faceData)            
+        foreach (Vector3 v in newMesh.faceData)
         {
             newVerts[i] = newMesh.vertices[(int)v.x - 1];
             if (v.y >= 1)
@@ -64,39 +56,39 @@ public class ObjImporter {
             i++;
         }
  
-		Mesh mesh = new Mesh();
+        Mesh mesh = new Mesh();
  
-        mesh.vertices = newVerts;     
-        mesh.uv = newUVs;        
+        mesh.vertices = newVerts;    
+        mesh.uv = newUVs;       
         mesh.normals = newNormals;
         mesh.triangles = newMesh.triangles;
  
         mesh.RecalculateBounds();
         mesh.Optimize();
  
-		return mesh;
-	}
-	
-	private static meshStruct createMeshStructFromStream(Stream stream)
+        return mesh;
+    }
+
+    private static meshStruct createMeshStructFromStream(Stream stream)
     {
-		meshStruct mesh = new meshStruct();
-		byte[] data = new byte[stream.Length];
-		stream.Read(data, 0, (int)stream.Length);
-		mesh.objFile = System.Text.Encoding.UTF8.GetString(data);
-			
-		return createMeshStruct(ref mesh);
-	}
- 
-	private static meshStruct createMeshStructFromFile(string filename)
+        meshStruct mesh = new meshStruct();
+        byte[] data = new byte[stream.Length];
+        stream.Read(data, 0, (int)stream.Length);
+        mesh.objFile = System.Text.Encoding.UTF8.GetString(data);
+            
+        return createMeshStruct(ref mesh);
+    }
+
+    private static meshStruct createMeshStructFromFile(string filename)
     {
-		meshStruct mesh = new meshStruct();
+        meshStruct mesh = new meshStruct();
         StreamReader stream = File.OpenText(filename);
         mesh.objFile = stream.ReadToEnd();
         stream.Close();
-		
-		return createMeshStruct(ref mesh);
-	}
-	
+        
+        return createMeshStruct(ref mesh);
+    }
+
     private static meshStruct createMeshStruct(ref meshStruct mesh)
     {
         int triangles = 0;
@@ -123,8 +115,8 @@ public class ObjImporter {
                 }
                 else
                 {
-                    currentText = currentText.Trim();                           //Trim the current line
-                    brokenString = currentText.Split(splitIdentifier, 50);      //Split the line into an array, separating the original line by blank spaces
+                    currentText = currentText.Trim();                          //Trim the current line
+                    brokenString = currentText.Split(splitIdentifier, 50);    //Split the line into an array, separating the original line by blank spaces
                     switch (brokenString[0])
                     {
                         case "v":
@@ -236,7 +228,7 @@ public class ObjImporter {
                                 Vector3 temp = new Vector3();
                                 brokenBrokenString = brokenString[j].Split(splitIdentifier2, 3);    //Separate the face into individual components (vert, uv, normal)
                                 temp.x = System.Convert.ToInt32(brokenBrokenString[0]);
-                                if (brokenBrokenString.Length > 1)                                  //Some .obj files skip UV and normal
+                                if (brokenBrokenString.Length > 1)                                //Some .obj files skip UV and normal
                                 {
                                     if (brokenBrokenString[1] != "")                                    //Some .obj files skip the uv and not the normal
                                     {
@@ -251,7 +243,7 @@ public class ObjImporter {
                                 f2++;
                             }
                             j = 1;
-                            while (j + 2 < brokenString.Length)     //Create triangles out of the face data.  There will generally be more than 1 triangle per face.
+                            while (j + 2 < brokenString.Length)  //Create triangles out of the face data.  There will generally be more than 1 triangle per face.
                             {
                                 mesh.triangles[f] = intArray[0];
                                 f++;
@@ -267,7 +259,7 @@ public class ObjImporter {
                     currentText = reader.ReadLine();
                     if (currentText != null)
                     {
-                        currentText = currentText.Replace("  ", " ");       //Some .obj files insert double spaces, this removes them.
+                        currentText = currentText.Replace("  ", " ");      //Some .obj files insert double spaces, this removes them.
                     }
                 }
             }
