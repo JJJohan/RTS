@@ -67,7 +67,6 @@ namespace RTS
             }
             else if (m_current == m_down && a_event.mousePosition.x > 0 && !m_bounds.Contains(a_event.mousePosition))
             {
-                Debug.Log(a_event.mousePosition);
                 m_current = m_up;
             }
             

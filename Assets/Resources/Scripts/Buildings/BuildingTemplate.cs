@@ -17,15 +17,30 @@ namespace RTS
 			properties.power = a_prefab.powerUsage;
 			properties.buildTime = a_prefab.buildTime;
 			properties.cost = a_prefab.cost;		
-			properties.miniSize = new Vector2(6f, 6f);		
+			properties.miniSize = new Vector2(6f, 6f);
+			properties.ID = a_prefab.ID;
 			
 			// Type
 			Building building = null;
-			if (a_prefab.type == Building.Type.DEFAULT)
+			switch (a_prefab.type)
 			{
-				building = new Building(properties, a_prefab.model, a_prefab.texture);	
+				case Building.Type.HEADQUARTERS:
+					building = new Headquarters(properties, a_prefab.model, a_prefab.texture);  
+					break;
+				
+				case Building.Type.POWERFACTORY:
+					building = new PowerFactory(properties, a_prefab.model, a_prefab.texture);  
+					break;
+					
+				case Building.Type.UNITFACTORY:
+					building = new UnitFactory(properties, a_prefab.model, a_prefab.texture);  
+					break;
+					
+				default:
+					building = new Building(properties, a_prefab.model, a_prefab.texture);  
+					break;
 			}
-			
+
 			return building;
 		}
 	}

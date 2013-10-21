@@ -4,9 +4,10 @@ namespace RTS
 {
 	// Base class of a structure in the RTS project.	
 	public class Building : Selectable
-	{	
+	{
 		public struct Properties
 		{
+			public string ID;
 			public string name;
 			public int health;
 			public int power;
@@ -14,7 +15,6 @@ namespace RTS
 			public int cost;
 			public Vector2 miniSize;
 		}
-		
 		// Variables
 		protected int m_power;
 		protected int m_buildTime;
@@ -24,42 +24,52 @@ namespace RTS
 		protected Vector3 m_rotation;
 		protected MeshFilter m_mesh;
 		protected MeshRenderer m_renderer;
+		protected int m_type;
 		private TextMesh m_text;
 		private GameObject m_ghost;
 		private BoxCollider m_collider;
 		private bool m_destroyed;
-		
+
 		// Functions
 		public float Health { get; set; }
+
 		public float HealthPercent() { return m_health / m_totalHealth; }
 		public float BuildPercent() { return m_buildPercent; }
 		public bool Repairing { get; set; }
+
 		public int Cost() { return m_cost; }
-		public int Power() { return m_power; }
+		public virtual int Power() { return m_power; }
 		public int BuildTime() { return m_buildTime; }
 		public bool Built() { return m_built; }
 		public Vector3 Position { get; set; }
 		public Vector3 Rotation { get; set; }
 		public bool Destroyed() { return m_destroyed; }
-		
+		public int BuildingType() { return m_type; }
+
 		public struct Type
 		{
 			public const int DEFAULT = 0;
+			public const int HEADQUARTERS = 1;
+			public const int POWERFACTORY = 2;
+			public const int UNITFACTORY = 3;
 		}
-		
+
 		public Building(Properties a_properties, Mesh a_mesh, Texture2D a_texture)
+			: base(a_properties.ID)
 		{		
 			m_mesh = m_gameObject.AddComponent<MeshFilter>();
 			m_renderer = m_gameObject.AddComponent<MeshRenderer>();
 			m_renderer.material.shader = Shader.Find("Diffuse");
 			
 			// Init properties
+			m_ID = a_properties.ID;
 			m_gameObject.name = a_properties.name;
 			m_totalHealth = a_properties.health;
 			m_power = a_properties.power;
 			m_cost = a_properties.cost;
 			m_buildTime = a_properties.buildTime;
 			m_miniSize = a_properties.miniSize;
+			m_type = Type.DEFAULT;
 			
 			// Init model and texture
 			m_renderer.material.mainTexture = a_texture;
@@ -74,7 +84,7 @@ namespace RTS
 			m_gameObject.tag = "Building";
 			m_icon = new MinimapIcon(m_miniSize, true);
 		}
-		
+
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
 		{	
 			// Set position and rotation.
@@ -109,13 +119,13 @@ namespace RTS
 			m_ghost.transform.position = m_position;
 			m_ghost.name = "Ghost Building";
 		}
-		
-		public override void Process(ref Resources a_res)
+
+		public override void Process()
 		{
 			if (m_destroyed)
 				return;
 		
-			base.Process(ref a_res);
+			base.Process();
 			
 			// Check if destroyed
 			if (m_health - m_damage < 0f)
@@ -134,6 +144,7 @@ namespace RTS
 					Object.Destroy(m_ghost);
 					m_built = true;
 					m_buildPercent = m_buildTime;
+					Main.m_res.buildings.Add(m_ID);
 				}
 				
 				// Update building position based on completion percentage.
@@ -153,10 +164,10 @@ namespace RTS
 			{
 				// Ensure sufficient funds.
 				int cost = (int)(m_cost * Time.deltaTime * .25f);
-				if (a_res.funds > cost)
+				if (Main.m_res.funds > cost)
 				{
 					m_damage -= Time.deltaTime / m_buildTime;
-					a_res.funds -= cost;
+					Main.m_res.funds -= cost;
 					if (m_damage < 0)
 					{
 						m_repairing = false;
@@ -173,7 +184,7 @@ namespace RTS
 			//float percent = m_health / m_totalHealth;
 			//gameObject.renderer.material.color = new Color(percent, percent, percent);
 		}
-		
+
 		public override void Select()
 		{
 			base.Select();
@@ -185,7 +196,7 @@ namespace RTS
 
 			// TODO: Play selection sound.
 		}
-		
+
 		public override void Deselect()
 		{
 			base.Deselect();
@@ -195,9 +206,18 @@ namespace RTS
 				
 			m_gameObject.renderer.material.color = Color.white;
 		}
-		
+
 		public override void Destroy()
 		{
+			for (int i = 0; i < Main.m_res.buildings.Count; ++i)
+			{
+				if (Main.m_res.buildings[i] == m_ID)
+				{
+					Main.m_res.buildings.Remove(Main.m_res.buildings[i]);
+					break;
+				}
+			}
+			
 			if (m_gameObject)
 				Object.Destroy(m_gameObject);
 			

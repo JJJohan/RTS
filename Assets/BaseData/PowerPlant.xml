@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!-- Building XML File -->
+
+<Building ID = "POWER_PLANT">
+
+	<!-- Basic building properties. -->
+	<Properties
+		Name = "Power Plant"
+		BuildingType = "POWERFACTORY"
+		MenuID = "1"
+		Cost = "800"
+		PowerUsage = "-40"
+		BuildTime = "10"
+		Health = "400"
+		MiniMapIconSize = "1, 1"
+	/>
+	
+	<!-- Tech tree variables. -->
+	<Tech ReplaceModel = "1">
+		<TechReq Value = "CONSTRUCTION_YARD"/>
+		<Upgrade 
+			Name = "POWER_LEVEL_1"
+			Title = "Extra Turbine"
+			Cost = "800"
+			UpgradeTime = "10"
+			
+			AdditionalPowerUsage = "-20"
+		/>
+	</Tech>
+	
+	<!-- Path to 3D model file. -->
+	<Model 
+		ModelFileName = "PowerPlant.obj"
+		TextureFileName = "PowerPlant.jpg"
+	/>
+	
+	<!-- Path to cameo texture file. -->
+	<Cameo 
+		CameoFileName = "PowerPlantC.jpg"
+	/>
+	
+</Building>

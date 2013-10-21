@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System;
 
 namespace RTS
-{	
+{
 	public class UserData : MonoBehaviour
 	{
 		public object data;
 	}
-	
+
 	public class Resources
 	{
 		public Resources()
@@ -17,16 +17,16 @@ namespace RTS
 			prefabs.buildingPrefabs = new Dictionary<string, BuildingPrefab>();
 			prefabs.unitPrefabs = new Dictionary<string, UnitPrefab>();
 		}
-		
+
 		public int powerUsed;
 		public int power;
 		public int funds;
 		public List<string> buildings;
 		public Prefabs prefabs;
 	}
-	
+
 	public static class Main
-	{		
+	{
 		public static List<Unit> m_unitList;
 		public static List<Building> m_buildingList;
 		public static Resources m_res;
@@ -45,21 +45,32 @@ namespace RTS
 			UserInterface.InitGUI();
 			FileParser.ParseFiles();
 		}
-		
 		// Update is called once per frame
-		public static void Update() 
+		public static void Update()
 		{
 			List<Selectable> m_destroyList = new List<Selectable>();
 			
 			// Update buildings
+			m_res.power = 0;
+			m_res.powerUsed = 0;
 			foreach (Building building in m_buildingList)
 			{
-				building.Process(ref m_res);
+				building.Process();
 				if (building.Destroyed())
 				{
-					m_res.powerUsed -= building.Power();
 					building.Destroy();
 					m_destroyList.Add(building);
+				}
+				else
+				{
+					if (building.BuildingType() != Building.Type.POWERFACTORY)
+					{
+						m_res.powerUsed += building.Power();
+					}
+					else
+					{
+						m_res.power += building.Power();
+					}
 				}
 			}
 			
@@ -84,13 +95,11 @@ namespace RTS
 			// Update Input
 			InputHandler.ProcessInput();
 		}
-		
 		// Draw interface.
 		public static void Draw()
 		{
 			UserInterface.Draw();
 		}
-		
 		// Place a building.
 		public static Building CreateBuilding(BuildingPrefab a_prefab, Vector3 a_pos, Vector3 a_rot)
 		{				
@@ -103,18 +112,14 @@ namespace RTS
 			building.GetIcon(out icon);
 			UserInterface.m_sidePanel.m_minimap.AddIcon(ref icon);
 			
-			// Update available resources.
-			m_res.powerUsed += building.Power();
-			m_res.buildings.Add(a_prefab.ID);
-			
 			return building;
 		}
-		
 		// Create a ghost building to show where it is being placed.
 		public static void CreateBuildingGhost(SidePanel a_sidePanel, BuildingArgs a_events)
 		{
 			int cost = a_events.prefab.cost;
-			if (InputHandler.m_cursorBuilding) cost += InputHandler.m_cursorBuilding.GetComponent<GhostBuilding>().m_prefab.cost;
+			if (InputHandler.m_cursorBuilding)
+				cost += InputHandler.m_cursorBuilding.GetComponent<GhostBuilding>().m_prefab.cost;
 			if (cost > m_res.funds)
 				return;
 		
@@ -133,7 +138,6 @@ namespace RTS
 			GhostBuilding script = InputHandler.m_cursorBuilding.AddComponent<GhostBuilding>();
 			script.Create(a_events.prefab);
 		}
-		
 		// Place a unit.
 		public static void CreateUnit(string a_name, Vector3 a_pos)
 		{			

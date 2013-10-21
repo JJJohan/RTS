@@ -6,12 +6,12 @@
 	<!-- Basic building properties. -->
 	<Properties
 		Name = "Construction Yard"
+		BuildingType = "HEADQUARTERS"
 		MenuID = "0"
 		Cost = "2000"
 		PowerUsage = "20"
 		BuildTime = "20"
 		Health = "4000"
-		Bounds = "1.0, 1.0, 1.0"
 		MiniMapIconSize = "6, 6"
 	/>
 	

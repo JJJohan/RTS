@@ -5,6 +5,10 @@ namespace RTS
 	// Base class of a unit in the RTS project.	
 	public abstract class Unit : Selectable
 	{	
+		public Unit()
+			: base("")
+		{}
+		
 		public override void Select()
 		{
 			m_gameObject.GetComponent<MeshRenderer>().material.color = Color.green;

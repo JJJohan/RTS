@@ -14,27 +14,29 @@ namespace RTS
 		protected float m_damage;
 		protected Vector2 m_miniSize;
 		protected MinimapIcon m_icon;
-		
+				protected string m_ID;
+				
 		private GameObject m_selectionBox;
 		private GameObject m_healthFront;
 		private GameObject m_healthBack;
 		
 		public GameObject GetObject() { return m_gameObject; }
 		public string Tag() { return m_gameObject.tag; }
+				
+				public Selectable(string a_ID)
+				{
+						m_ID = a_ID;
+						m_gameObject = new GameObject();
+						UserData data = m_gameObject.AddComponent<UserData>();
+						data.data = this;
+				}
 		
 		public void GetIcon(out MinimapIcon a_icon)
 		{
 			a_icon = m_icon;
 		}
 		
-		public Selectable()
-		{
-			m_gameObject = new GameObject();
-			UserData data = m_gameObject.AddComponent<UserData>();
-			data.data = this;
-		}
-		
-		public virtual void Process(ref Resources a_ref)
+		public virtual void Process()
 		{	
 			UpdateSelectionBox();
 		}
