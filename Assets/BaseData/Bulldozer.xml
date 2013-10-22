@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- Building XML File -->
+
+<Unit ID = "BULLDOZER">
+
+	<!-- Basic building properties. -->
+	<Properties
+		Name = "Bulldozer"
+		UnitType = "DOZER"
+		Factory = "CONSTRUCTION_YARD"
+		MenuID = "0"
+		Cost = "1200"
+		BuildTime = "1"
+		Health = "200"
+		Speed = "8"
+		Acceleration = "3"
+		TurnSpeed = "90"
+		MiniMapIconSize = "1, 1"
+	/>
+	
+	<!-- Tech tree variables. -->
+	<Tech>
+		<TechReq Value = "CONSTRUCTION_YARD"/>
+	</Tech>
+	
+	<!-- Path to 3D model file. -->
+	<Model 
+		ModelFileName = "Bulldozer.obj"
+		TextureFileName = ""
+	/>
+	
+	<!-- Path to cameo texture file. -->
+	<Cameo 
+		CameoFileName = "BulldozerC.jpg"
+	/>
+	
+</Unit>

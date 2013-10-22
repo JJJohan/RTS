@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!-- Building XML File -->
+
+<Building ID = "BARRACKS">
+
+	<!-- Basic building properties. -->
+	<Properties
+		Name = "Barracks"
+		BuildingType = "UNITFACTORY"
+		MenuID = "2"
+		Cost = "1000"
+		PowerUsage = "10"
+		BuildTime = "14"
+		Health = "500"
+		MiniMapIconSize = "1, 1"
+	/>
+	
+	<!-- Tech tree variables. -->
+	<Tech ReplaceModel = "1">
+		<TechReq Value = "CONSTRUCTION_YARD"/>
+	</Tech>
+	
+	<!-- Path to 3D model file. -->
+	<Model 
+		ModelFileName = "Barracks.obj"
+		TextureFileName = "Barracks.jpg"
+	/>
+	
+	<!-- Path to cameo texture file. -->
+	<Cameo 
+		CameoFileName = "BarracksC.jpg"
+	/>
+	
+</Building>

@@ -99,8 +99,8 @@ namespace RTS
 				foreach (Headquarters building in m_headquarters)
 				{
 					if (!building.Built()) continue;
-					
-					if (Vector3.Distance(transform.position, building.Position) < 100)
+
+					if (Vector3.Distance(transform.position, building.Position()) < 100)
 					{
 						m_inRange = true;
 						break;

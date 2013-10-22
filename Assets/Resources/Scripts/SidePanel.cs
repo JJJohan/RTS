@@ -10,19 +10,35 @@ namespace RTS
 		public BuildingPrefab prefab;
 	}
 
+	public class UnitArgs : EventArgs
+	{
+		public UnitPrefab prefab;
+	}
+
 	public class SidePanel
 	{
 		public struct PrefabButton
 		{
-			public BuildingPrefab prefab;
+			public UnitPrefab unit;
+			public BuildingPrefab building;
+			public int cost;
+			public int type;
 			public Texture2D cameo;
+		}
+
+		private struct Type
+		{
+			public const int Building = 0;
+			public const int Unit = 1;
 		}
 
 		public static Material m_guiMat;
 
-		public delegate void SelectableHandler(SidePanel a_sidePanel,BuildingArgs a_events);
+		public delegate void BuildingHandler(SidePanel a_sidePanel, BuildingArgs a_events);
+		public delegate void UnitHandler(SidePanel a_sidePanel, UnitArgs a_events);
 
-		public event SelectableHandler SelectableEvent;
+		public event BuildingHandler BuildingEvent;
+		public event UnitHandler UnitEvent;
 
 		public Minimap m_minimap;
 		private GUIStyle m_textStyle;
@@ -57,7 +73,7 @@ namespace RTS
 			
 			// Text GUI Style
 			m_textStyle = new GUIStyle();
-			m_textStyle.font = (Font)UnityEngine.Resources.Load("Fonts/coop");
+			m_textStyle.font = (Font)UnityEngine.Resources.Load("Fonts/gil");
 			m_textStyle.fontSize = 24;
 			m_textStyle.alignment = TextAnchor.MiddleCenter;
 			m_textStyle.normal.textColor = Color.white;
@@ -146,25 +162,79 @@ namespace RTS
 					if (index >= m_prefabButtons.Count)
 						break;
 					
-					// Check if we can afford the building or unity.
-					m_buttons[index].Lock(Main.m_res.funds < m_prefabButtons[index].prefab.cost);
+					// Check if we can afford the building or unit.
+					m_buttons[index].Lock(Main.m_res.funds < m_prefabButtons[index].cost);
 					
 					// Process buttons
 					if (m_buttons[index].Process(Main.m_event) == Button.UP)
 					{
-						if (SelectableEvent != null)
+						if (m_prefabButtons[index].type == Type.Building)
 						{
-							BuildingArgs args = new BuildingArgs();
-							args.prefab = m_prefabButtons[index].prefab;
-							SelectableEvent(this, args);
-							break;
+							if (BuildingEvent != null)
+							{
+								BuildingArgs args = new BuildingArgs();
+								args.prefab = m_prefabButtons[index].building;
+								BuildingEvent(this, args);
+								break;
+							}
+						}
+						else
+						{
+							if (UnitEvent != null)
+							{
+								UnitArgs args = new UnitArgs();
+								args.prefab = m_prefabButtons[index].unit;
+								UnitEvent(this, args);
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
 
-		private void ProcessBuildingList()
+		public void ListUnits(List<string> a_units)
+		{
+			// Clear button list
+			m_prefabButtons.Clear();
+			
+			// Check against building tech requirements.
+			foreach (string key in a_units)
+			{
+				UnitPrefab prefab = Main.m_res.prefabs.unitPrefabs[key];
+				
+				int reqs = prefab.techReqs.Count;
+				for (int j = 0; j < prefab.techReqs.Count; ++j)
+				{
+					for (int k = 0; k < Main.m_res.buildings.Count; ++k)
+					{
+						if (prefab.techReqs[j] == Main.m_res.buildings[k])
+							--reqs;
+						
+						if (reqs == 0)
+							goto Buttons;
+					}
+					
+				}
+				
+				Buttons:	
+				// Add buttons if requirements are met.
+				if (reqs == 0)
+				{
+					PrefabButton button = new PrefabButton();
+					button.unit = prefab;
+					button.cameo = prefab.cameo;
+					button.cost = prefab.cost;
+					button.type = Type.Unit;
+					m_prefabButtons.Add(button);
+				}
+			}
+			
+			// Order buttons
+			m_prefabButtons.Sort((x, y) => x.unit.menuID.CompareTo(y.unit.menuID));
+		}
+
+		public void ProcessBuildingList()
 		{
 			// Clear button list
 			m_prefabButtons.Clear();
@@ -193,14 +263,16 @@ namespace RTS
 				if (reqs == 0)
 				{
 					PrefabButton button = new PrefabButton();
-					button.prefab = prefab;
+					button.building = prefab;
 					button.cameo = prefab.cameo;
+					button.cost = prefab.cost;
+					button.type = Type.Building;
 					m_prefabButtons.Add(button);
 				}
 			}
 			
 			// Order buttons
-			m_prefabButtons.Sort((x, y) => x.prefab.menuID.CompareTo(y.prefab.menuID));
+			m_prefabButtons.Sort((x, y) => x.building.menuID.CompareTo(y.building.menuID));
 		}
 
 		public void Draw()

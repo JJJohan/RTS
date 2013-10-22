@@ -49,6 +49,35 @@ namespace RTS
 
 	public struct UnitPrefab
 	{
+		public struct Upgrade
+		{
+			public string ID;
+			public string name;
+			public int cost;
+			public int health;
+			public int buildTime;
+			public Mesh model;
+			public Texture2D texture;
+		}
+
+		public string ID;
+		public string name;
+		public string factory;
+		public int type;
+		public int menuID;
+		public int cost;
+		public int buildTime;
+		public int health;
+		public float speed;
+		public float turnSpeed;
+		public float accel;
+		public Vector2 miniMapSize;
+		public Mesh model;
+		public Texture2D texture;
+		public Texture2D cameo;
+		public List<string> techReqs;
+		public List<Upgrade> techUpgrades;
+		public bool dataItem;
 	}
 
 	public static class FileParser
@@ -173,7 +202,7 @@ namespace RTS
 					else if (attrib.Value == "POWERFACTORY")
 					  prefab.type = Building.Type.POWERFACTORY;
 					else if (attrib.Value == "UNITFACTORY")
-					  prefab.type = Building.Type.POWERFACTORY;
+					  prefab.type = Building.Type.UNITFACTORY;
 				}
 				
 				// Tech	 
@@ -294,8 +323,181 @@ namespace RTS
 			}
 			else
 			{
+				// Name
+				XmlAttributeCollection attribs = node.Attributes;
+				if (attribs.Count != 1)
+					goto XMLError;
+				XmlNode attrib = attribs.GetNamedItem("ID");
+				if (attrib == null)
+					goto XMLError;
+				string ID = attrib.Value;
+				
+				// Duplicate check
+				if (Main.m_res.prefabs.buildingPrefabs.ContainsKey(ID))
+				{
+					Debug.LogWarning("Prefab overwrite attempt detected - possible mod: " + ID);
+					return;
+				}
+				
+				// Create prefab
 				UnitPrefab prefab = new UnitPrefab();
-				string ID = "";
+				prefab.dataItem = a_zip;
+				prefab.ID = ID;
+				prefab.type = Unit.Type.TANK;
+				
+				// Properties
+				XmlNodeList nodes = node.SelectNodes("Properties");
+				if (nodes.Count != 1)
+					goto XMLError;
+				attribs = nodes[0].Attributes;
+				if (attribs.Count != 11)
+					goto XMLError;
+				attrib = attribs.GetNamedItem("Name");
+				if (attrib == null)
+					goto XMLError;
+				prefab.name = attrib.Value;
+				attrib = attribs.GetNamedItem("Factory");
+				if (attrib == null)
+					goto XMLError;
+				prefab.factory = attrib.Value;
+				attrib = attribs.GetNamedItem("MenuID");
+				if (attrib == null)
+					goto XMLError;
+				prefab.menuID = Int32.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("Cost");
+				if (attrib == null)
+					goto XMLError;
+				prefab.cost = Int32.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("BuildTime");
+				if (attrib == null)
+					goto XMLError;
+				prefab.buildTime = Int32.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("Health");
+				if (attrib == null)
+					goto XMLError;
+				prefab.health = Int32.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("Speed");
+				if (attrib == null)
+					goto XMLError;
+				prefab.speed = float.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("TurnSpeed");
+				if (attrib == null)
+					goto XMLError;
+				prefab.turnSpeed = float.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("Acceleration");
+				if (attrib == null)
+					goto XMLError;
+				prefab.accel = float.Parse(attrib.Value);
+				attrib = attribs.GetNamedItem("MiniMapIconSize");
+				if (attrib == null)
+					goto XMLError;
+				if (attrib.Value.Split(',').Length != 2)
+					goto XMLError;
+				prefab.miniMapSize = new Vector2(Int32.Parse(attrib.Value.Split(',')[0]), Int32.Parse(attrib.Value.Split(',')[1]));
+				attrib = attribs.GetNamedItem("UnitType");
+				if (attrib == null)
+					goto XMLError;
+				if (attrib.Value == "DOZER")
+				  prefab.type = Unit.Type.DOZER;
+				else if (attrib.Value == "INFANTRY")
+				  prefab.type = Unit.Type.INFANTRY;
+				else if (attrib.Value == "TANK")
+				  prefab.type = Unit.Type.TANK;
+
+				// Tech	 
+				prefab.techReqs = new List<string>();
+				prefab.techUpgrades = new List<UnitPrefab.Upgrade>();
+				
+				nodes = node.SelectNodes("Tech/TechReq");
+				foreach (XmlNode n in nodes)
+				{
+					attribs = n.Attributes;
+					if (attribs.Count != 1)
+						goto XMLError;
+					attrib = attribs.GetNamedItem("Value");
+					if (attrib == null)
+						goto XMLError;
+					if (prefab.techReqs == null)
+						prefab.techReqs = new List<string>();
+					prefab.techReqs.Add(attrib.Value);
+				}
+				
+				nodes = node.SelectNodes("Tech/Upgrade");
+				foreach (XmlNode n in nodes)
+				{
+					attribs = n.Attributes;
+					if (attribs.Count < 3)
+						goto XMLError;
+					if (prefab.techUpgrades == null)
+						prefab.techUpgrades = new List<UnitPrefab.Upgrade>();
+					UnitPrefab.Upgrade upgrade = new UnitPrefab.Upgrade();
+					upgrade.health = 0;
+					attrib = attribs.GetNamedItem("Name");
+					if (attrib == null)
+						goto XMLError;
+					upgrade.name = attrib.Value;
+					attrib = attribs.GetNamedItem("Cost");
+					if (attrib == null)
+						goto XMLError;
+					upgrade.cost = Int32.Parse(attrib.Value);
+					attrib = attribs.GetNamedItem("UpgradeTime");
+					if (attrib == null)
+						goto XMLError;
+					upgrade.buildTime = Int32.Parse(attrib.Value);
+					attrib = attribs.GetNamedItem("AdditionalHealth");
+					if (attrib != null)
+						upgrade.health = Int32.Parse(attrib.Value);
+					attrib = attribs.GetNamedItem("ModelFile");
+					if (attrib != null && attrib.Value.Count() > 0)
+					{
+						upgrade.model = LoadObj(attrib.Value, a_zip);
+						if (upgrade.model == null)
+							goto XMLError;
+					}
+					attrib = attribs.GetNamedItem("TextureFile");
+					if (attrib != null && attrib.Value.Count() > 0)
+					{
+						upgrade.texture = LoadImage(attrib.Value, a_zip);
+						if (upgrade.texture == null)
+							goto XMLError;
+					}
+					prefab.techUpgrades.Add(upgrade);
+				}
+
+				// Model
+				nodes = node.SelectNodes("Model");
+				if (nodes.Count != 1)
+					goto XMLError;
+				attribs = nodes[0].Attributes;
+				if (attribs.Count != 2)
+					goto XMLError;
+				attrib = attribs.GetNamedItem("ModelFileName");
+				if (attrib == null || attrib.Value.Count() == 0)
+					goto XMLError;
+				prefab.model = LoadObj(attrib.Value, a_zip);
+				if (prefab.model == null)
+					goto XMLError;
+				attrib = attribs.GetNamedItem("TextureFileName");
+				if (attrib != null && attrib.Value.Count() > 0)
+				{
+					prefab.texture = LoadImage(attrib.Value, a_zip);
+					if (prefab.texture == null)
+						goto XMLError;
+				}
+
+				// Cameo
+				nodes = node.SelectNodes("Cameo");
+				if (nodes.Count != 1)
+					goto XMLError;
+				attribs = nodes[0].Attributes;
+				if (attribs.Count != 1)
+					goto XMLError;
+				attrib = attribs.GetNamedItem("CameoFileName");
+				if (attrib == null || attrib.Value.Count() == 0)
+					goto XMLError;
+				prefab.cameo = LoadImage(attrib.Value, a_zip);
+				if (prefab.cameo == null)
+					goto XMLError;
 				
 				Main.m_res.prefabs.unitPrefabs.Add(ID, prefab);
 			}

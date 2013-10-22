@@ -14,7 +14,13 @@ namespace RTS
 		protected float m_damage;
 		protected Vector2 m_miniSize;
 		protected MinimapIcon m_icon;
-				protected string m_ID;
+		protected string m_ID;
+		protected string m_name;
+		protected int m_type;
+		protected MeshFilter m_mesh;
+		protected MeshRenderer m_renderer;
+		protected bool m_destroyed;
+		protected float m_radius;
 				
 		private GameObject m_selectionBox;
 		private GameObject m_healthFront;
@@ -22,15 +28,44 @@ namespace RTS
 		
 		public GameObject GetObject() { return m_gameObject; }
 		public string Tag() { return m_gameObject.tag; }
-				
-				public Selectable(string a_ID)
-				{
-						m_ID = a_ID;
-						m_gameObject = new GameObject();
-						UserData data = m_gameObject.AddComponent<UserData>();
-						data.data = this;
-				}
-		
+		public int Cost() { return m_cost; }
+		public Vector3 Position() { return m_gameObject.transform.position; }
+		public bool Destroyed() { return m_destroyed; }
+		public float Radius() { return m_radius; }
+
+		public Selectable(string a_ID, string a_name)
+		{
+			m_ID = a_ID;
+			m_gameObject = new GameObject();
+			m_gameObject.layer = 10;
+			m_gameObject.name = a_name;
+			m_destroyed = false;
+			UserData data = m_gameObject.AddComponent<UserData>();
+			data.data = this;
+
+			m_mesh = m_gameObject.AddComponent<MeshFilter>();
+			m_renderer = m_gameObject.AddComponent<MeshRenderer>();
+			m_renderer.material.shader = Shader.Find("Diffuse");
+		}
+
+		protected void Init(Mesh a_mesh, Texture2D a_texture)
+		{
+			// Init model and texture
+			m_renderer.material.mainTexture = a_texture;
+			m_mesh.mesh = a_mesh;
+
+			// Calculate radius
+			m_radius = m_mesh.mesh.bounds.size.x;
+			if (m_mesh.mesh.bounds.size.z > m_radius) m_radius = m_mesh.mesh.bounds.size.z;
+			m_radius /= 2;
+
+			BoxCollider collider = m_gameObject.AddComponent<BoxCollider>();
+			collider.size = m_mesh.mesh.bounds.size;
+			collider.size = new Vector3(collider.size.x, collider.size.y * 0.9f, collider.size.z);
+			collider.center = new Vector3(0f, m_mesh.mesh.bounds.size.y * 0.5f, 0f);;
+			m_icon = new MinimapIcon(m_miniSize, true);
+		}
+
 		public void GetIcon(out MinimapIcon a_icon)
 		{
 			a_icon = m_icon;
@@ -39,6 +74,16 @@ namespace RTS
 		public virtual void Process()
 		{	
 			UpdateSelectionBox();
+		}
+
+		protected void UpdateGuiPosition()
+		{
+			if (m_selectionBox)
+			{
+				m_selectionBox.transform.position = m_gameObject.transform.position;
+				m_healthFront.transform.position = m_gameObject.transform.position;
+				m_healthBack.transform.position = m_gameObject.transform.position;
+			}
 		}
 		
 		private void UpdateSelectionBox()
@@ -82,7 +127,7 @@ namespace RTS
 			// Health Back
 			m_healthBack = new GameObject();
 			Billboard healthBack = m_healthBack.AddComponent<Billboard>();
-			healthBack.Create(largest/2, largest/20, new Vector2(largest/2, -bounds.y * 1.5f), Billboard.Anchor.Right, "Textures/HealthBack");
+			healthBack.Create(largest/2, largest/20, new Vector2(largest/2, -largest * 0.6f), Billboard.Anchor.Right, "Textures/HealthBack");
 			m_healthBack.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
 			//m_healthBack.GetComponent<MeshRenderer>().material.color = Color.red;
 			m_healthBack.transform.localScale = new Vector3(0f, 1f, 1f);
@@ -91,7 +136,7 @@ namespace RTS
 			// Health Front			
 			m_healthFront = new GameObject();
 			Billboard healthFront = m_healthFront.AddComponent<Billboard>();
-			healthFront.Create(largest/2, largest/20, new Vector2(-largest/2, -bounds.y * 1.5f), Billboard.Anchor.Left, "Textures/HealthFront");
+			healthFront.Create(largest/2, largest/20, new Vector2(-largest/2, -largest * 0.6f), Billboard.Anchor.Left, "Textures/HealthFront");
 			m_healthFront.transform.position = m_position + new Vector3(0f, bounds.y/2, 0f);
 			//m_healthFront.GetComponent<MeshRenderer>().material.color = Color.green;
 			m_healthFront.transform.localScale = new Vector3(1f, 1f, 1f);

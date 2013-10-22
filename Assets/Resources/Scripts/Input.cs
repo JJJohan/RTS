@@ -68,19 +68,29 @@ namespace RTS
 			{
 				case Cursor.ORDER:
 					if (Input.GetMouseButtonUp(1))
-					{   
-						// TODO: Execute order.
+					{
 						if (m_selectionType == Selection.UNIT)
-						{   
+						{
+							Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+							RaycastHit hit;
+							if (Physics.Raycast(ray, out hit, 10000.0f, 1 << 8))
+							{
+								foreach(Unit unit in Main.m_unitList)
+								{
+									unit.SetDestination(hit.point);
+								}
+							}
 						}
 						else if (m_selectionType == Selection.BUILDING)
 						{
+							// TODO: Rally point?
 						}
 						else
 						{
 							throw new UnityException();
 						}
 					}
+
 					goto case Cursor.SELECTION;
 				
 				case Cursor.SELECTION:
@@ -115,21 +125,22 @@ namespace RTS
 								}
 							
 								// Select all units within the rectangular zone - no buildings.
-								int selectIndex = 0;
+								bool selected = false;
 								foreach (Unit unit in Main.m_unitList)
-								{				   
-									if (selection.Contains(unit.GetObject().transform.position))
+								{
+									Vector3 unitPos = unit.GetObject().transform.position;
+									if (selection.Contains(new Vector2(unitPos.x, unitPos.z)))
 									{						   
-										if (selectIndex == 0)
+										if (!selected)
 											ClearSelection();
-										++selectIndex;
-									
+										selected = true;
+
 										m_selected.Add(unit);
 										unit.Select();
 									}
 								}
 							
-								if (selectIndex == 0)
+								if (!selected)
 								{
 									ClearSelection();
 								}

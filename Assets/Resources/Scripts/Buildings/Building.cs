@@ -21,14 +21,9 @@ namespace RTS
 		protected float m_buildPercent;
 		protected bool m_built;
 		protected bool m_repairing;
-		protected Vector3 m_rotation;
-		protected MeshFilter m_mesh;
-		protected MeshRenderer m_renderer;
-		protected int m_type;
-		private TextMesh m_text;
-		private GameObject m_ghost;
-		private BoxCollider m_collider;
-		private bool m_destroyed;
+		protected TextMesh m_text;
+		protected GameObject m_ghost;
+		private NavMeshObstacle m_obstacle;
 
 		// Functions
 		public float Health { get; set; }
@@ -37,13 +32,9 @@ namespace RTS
 		public float BuildPercent() { return m_buildPercent; }
 		public bool Repairing { get; set; }
 
-		public int Cost() { return m_cost; }
 		public virtual int Power() { return m_power; }
 		public int BuildTime() { return m_buildTime; }
 		public bool Built() { return m_built; }
-		public Vector3 Position { get; set; }
-		public Vector3 Rotation { get; set; }
-		public bool Destroyed() { return m_destroyed; }
 		public int BuildingType() { return m_type; }
 
 		public struct Type
@@ -55,51 +46,41 @@ namespace RTS
 		}
 
 		public Building(Properties a_properties, Mesh a_mesh, Texture2D a_texture)
-			: base(a_properties.ID)
-		{		
-			m_mesh = m_gameObject.AddComponent<MeshFilter>();
-			m_renderer = m_gameObject.AddComponent<MeshRenderer>();
-			m_renderer.material.shader = Shader.Find("Diffuse");
-			
+			: base(a_properties.ID, a_properties.name)
+		{
 			// Init properties
-			m_ID = a_properties.ID;
-			m_gameObject.name = a_properties.name;
 			m_totalHealth = a_properties.health;
 			m_power = a_properties.power;
 			m_cost = a_properties.cost;
 			m_buildTime = a_properties.buildTime;
 			m_miniSize = a_properties.miniSize;
 			m_type = Type.DEFAULT;
-			
-			// Init model and texture
-			m_renderer.material.mainTexture = a_texture;
-			m_mesh.mesh = a_mesh;
-			
-			m_collider = m_gameObject.AddComponent<BoxCollider>();
-			m_collider.size = m_mesh.mesh.bounds.size;
-			m_collider.size = new Vector3(m_collider.size.x, m_collider.size.y * 0.9f, m_collider.size.z);
-			m_collider.center = new Vector3(0f, m_mesh.mesh.bounds.size.y * 0.5f, 0f);
-			m_destroyed = false;
-			m_gameObject.layer = 10;
 			m_gameObject.tag = "Building";
-			m_icon = new MinimapIcon(m_miniSize, true);
+
+			base.Init(a_mesh, a_texture);
+
+			// Nav mesh obstacle
+			m_obstacle = m_gameObject.AddComponent<NavMeshObstacle>();
+			m_obstacle.radius = m_radius;
+			m_obstacle.height = m_mesh.mesh.bounds.size.y;
 		}
 
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
 		{	
 			// Set position and rotation.
-			m_gameObject.transform.position = m_position = a_pos;
-			m_gameObject.transform.eulerAngles = m_rotation = a_rot;
+			m_position = a_pos;
+			m_gameObject.transform.eulerAngles = a_rot;
 			m_icon.Process(new Vector2(a_pos.x, -a_pos.z));
+			m_gameObject.transform.position = m_position - new Vector3(0f, m_mesh.mesh.bounds.size.y, 0f);
 			
 			// Create construction progress text
 			GameObject text = new GameObject();
 			MeshRenderer textRender = text.AddComponent<MeshRenderer>();
-			textRender.material = (Material)UnityEngine.Resources.Load("Fonts/coopMat");
+			textRender.material = (Material)UnityEngine.Resources.Load("Fonts/gilMat");
 			textRender.material.shader = Shader.Find("GUI/Text Shader");
 			textRender.material.color = Color.white;
 			m_text = text.AddComponent<TextMesh>();
-			m_text.font = (Font)UnityEngine.Resources.Load("Fonts/coop");
+			m_text.font = (Font)UnityEngine.Resources.Load("Fonts/gil");
 			m_text.text = "0%";
 			m_text.alignment = TextAlignment.Center;
 			m_text.anchor = TextAnchor.MiddleCenter;
@@ -148,7 +129,7 @@ namespace RTS
 				}
 				
 				// Update building position based on completion percentage.
-				float offset = ((m_buildTime - m_buildPercent) / m_buildTime) * 10;
+				float offset = ((m_buildTime - m_buildPercent) / m_buildTime) * m_mesh.mesh.bounds.size.y;
 				m_gameObject.transform.position = m_position - new Vector3(0f, offset, 0f);
 				
 				// Update percentage text.

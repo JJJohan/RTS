@@ -29,6 +29,7 @@ namespace RTS
 	{
 		public static List<Unit> m_unitList;
 		public static List<Building> m_buildingList;
+		public static List<Vector3> m_spawnPoints;
 		public static Resources m_res;
 		public static Event m_event;
 
@@ -36,14 +37,30 @@ namespace RTS
 		{	
 			m_unitList = new List<Unit>(256);
 			m_buildingList = new List<Building>(64);
+			m_spawnPoints = new List<Vector3>(8);
 			m_res = new Resources();
 			m_res.funds = 3100;
 			m_res.power = 0;
 			m_res.powerUsed = 0;
-			
+
+			// Fetch spawn points
+			GameObject[] points = GameObject.FindGameObjectsWithTag("Spawn");
+			foreach(GameObject p in points)
+				m_spawnPoints.Add(p.transform.position);
+
+			// Init Systems
 			InputHandler.InitInput();
 			UserInterface.InitGUI();
 			FileParser.ParseFiles();
+			CAS.Init();
+
+			// Create base spawn
+			Headquarters spawn;
+			BuildingPrefab prefab;
+			m_res.prefabs.buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out prefab);
+			spawn = (Headquarters)CreateBuilding(prefab, m_spawnPoints[0], Vector3.zero);
+			spawn.Finish();
+			Camera.main.GetComponent<CameraMovement>().SetPos(new Vector3(m_spawnPoints[0].x, m_spawnPoints[0].y + 50, m_spawnPoints[0].z - 30));
 		}
 		// Update is called once per frame
 		public static void Update()
@@ -75,9 +92,14 @@ namespace RTS
 			}
 			
 			// Update units
-			//foreach (Unit unit in m_unitList)
+			foreach (Unit unit in m_unitList)
 			{
-				//unit.Process(ref m_res);
+				unit.Process();
+				if (unit.Destroyed())
+				{
+					unit.Destroy();
+					m_destroyList.Add(unit);
+				}
 			}
 			
 			// Destroy units queued for removal.
@@ -88,6 +110,9 @@ namespace RTS
 				else if (m_destroyList[i].Tag() == "Unit")
 					m_unitList.Remove((Unit)m_destroyList[i]);
 			}
+
+			// Update CAS
+			CAS.Update();
 			
 			// Update GUI
 			UserInterface.Update();
