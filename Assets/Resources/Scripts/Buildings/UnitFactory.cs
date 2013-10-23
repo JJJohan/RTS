@@ -56,6 +56,8 @@ namespace RTS
 
 			if (delete != null)
 				m_queue.Remove(delete);
+
+			base.Process();
 		}
 
 		public void QueueUnit(SidePanel a_sidePanel, UnitArgs a_events)

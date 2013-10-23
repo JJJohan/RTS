@@ -120,12 +120,45 @@ namespace RTS
 			base.Process();
 		}
 
-		public Vector3 GetDestinationDir()
+		public Vector3 GetDestinationDir(int a_dest = 0)
 		{
-			if (m_destinations.Count > 0)
-				return (m_destinations[m_destinations.Count - 1] - Position()).normalized;
-			else
+			if (m_destinations.Count == 0)
 				return Vector3.zero;
+
+			int index = 0;
+			if (a_dest == 1)
+				index = m_destinations.Count - 1;
+			else if (m_destinations.Count > 1)
+				index = 1;
+
+			return (m_destinations[index] - Position()).normalized;
+		}
+
+		public Vector3 GetDestination(int a_dest = 0)
+		{
+			if (m_destinations.Count == 0)
+				return Vector3.zero;
+
+			int index = 0;
+			if (a_dest == 1)
+				index = m_destinations.Count - 1;
+			else if (m_destinations.Count > 1)
+				index = 1;
+
+			return m_destinations[index];
+		}
+
+		public void ClearDetour(bool a_once = false)
+		{
+			if (a_once && m_destinations.Count > 2)
+			{
+				m_destinations.RemoveAt(m_destinations.Count - 1);
+			}
+			else
+			{
+				while (m_destinations.Count > 2)
+					m_destinations.RemoveAt(m_destinations.Count - 1);
+			}
 		}
 
 		public void SetDestination(Vector3 a_pos)
@@ -139,7 +172,7 @@ namespace RTS
 			m_destinations.Add(a_pos);
 			m_agent.SetDestination(a_pos);
 			m_moveDir = Quaternion.LookRotation(a_pos - m_gameObject.transform.position);
-			m_moved = false;
+			if (m_destinations.Count > 0) m_moved = true;
 			m_rotateScale = 0f;
 		}
 		
