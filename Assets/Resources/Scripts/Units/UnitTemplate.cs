@@ -23,9 +23,9 @@ namespace RTS
 			Unit unit = null;
 			switch (a_prefab.type)
 			{
-				//case Unit.Type.DOZER:
-					//unit = new Dozer(properties, a_prefab.model, a_prefab.texture);
-					//break;
+				case Unit.Type.DOZER:
+					unit = new Dozer(properties, a_prefab.model, a_prefab.texture);
+					break;
 
 				//case Unit.Type.INFANTRY:
 					//unit = new Infantry(properties, a_prefab.model, a_prefab.texture);

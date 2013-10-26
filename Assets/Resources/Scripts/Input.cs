@@ -73,11 +73,52 @@ namespace RTS
 						{
 							Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 							RaycastHit hit;
-							if (Physics.Raycast(ray, out hit, 10000.0f, 1 << 8))
+							if (Physics.Raycast(ray, out hit, 10000.0f, 1 << 8 | 1 << 10 | 1 << 11))
 							{
-								foreach(Unit unit in Main.m_unitList)
+								if (hit.collider.tag == "Unit")
 								{
-									unit.SetDestination(hit.point);
+									foreach(Selectable s in m_selected)
+									{
+										if (s.GetObject().tag == "Unit")
+											((Unit)s).SetDestination(hit.point);
+									}
+								}
+								else if (hit.collider.tag == "Building")
+								{
+									Building building = (Building)hit.collider.GetComponent<UserData>().data;
+									Vector3[] corners = new Vector3[4];
+									corners[0] = hit.collider.transform.position + new Vector3(-hit.collider.bounds.size.x * 0.5f, 0f, -hit.collider.bounds.size.z * 0.5f);
+									corners[1] = hit.collider.transform.position + new Vector3(hit.collider.bounds.size.x * 0.5f, 0f, -hit.collider.bounds.size.z * 0.5f);
+									corners[2] = hit.collider.transform.position + new Vector3(-hit.collider.bounds.size.x * 0.5f, 0f, hit.collider.bounds.size.z * 0.5f);
+									corners[3] = hit.collider.transform.position + new Vector3(hit.collider.bounds.size.x * 0.5f, 0f, hit.collider.bounds.size.z * 0.5f);
+									int closest = 0;
+
+									foreach(Selectable s in m_selected)
+									{
+										if (s.GetObject().tag == "Unit")
+										{
+											if (((Unit)s).UnitType() == Unit.Type.DOZER)
+											{
+												((Dozer)s).Build(ref building);
+											}
+
+											for (int i = 0; i < 3; ++i)
+											{
+												if (Vector3.Distance(corners[i], s.Position()) > Vector3.Distance(corners[i+1], s.Position()))
+													closest = i+1;
+											}
+
+											((Unit)s).SetDestination(new Vector3(corners[closest].x, hit.transform.position.y, corners[closest].z));
+										}
+									}
+								}
+								else
+								{
+									foreach(Selectable s in m_selected)
+									{
+										if (s.GetObject().tag == "Unit")
+											((Unit)s).SetDestination(hit.point);
+									}
 								}
 							}
 						}
@@ -99,7 +140,7 @@ namespace RTS
 						// Raycast first half of rectangle.
 						m_clickPos = new Vector3(Input.mousePosition.x, Screen.height, 0.0f) - new Vector3(0.0f, Input.mousePosition.y);
 						m_ray1 = Camera.main.ScreenPointToRay(Input.mousePosition);
-						Physics.Raycast(m_ray1, out m_hit1, 5000.0f, 1 << 8 | 1 << 10);
+						Physics.Raycast(m_ray1, out m_hit1, 5000.0f, 1 << 8 | 1 << 10 | 1 << 11);
 					}
 					if (Input.GetMouseButtonUp(0))
 					{   
@@ -107,7 +148,7 @@ namespace RTS
 					
 						// Raycast second half of rectangle.
 						m_ray2 = Camera.main.ScreenPointToRay(Input.mousePosition);
-						if (Physics.Raycast(m_ray2, out m_hit2, 5000.0f, 1 << 8 | 1 << 10))
+						if (Physics.Raycast(m_ray2, out m_hit2, 5000.0f, 1 << 8 | 1 << 10 | 1 << 11))
 						{
 							// Determine if it's a rectangular selection.
 							if (Mathf.Abs(Vector2.Distance(m_hit1.point, m_hit2.point)) > 1.0f)
@@ -153,15 +194,18 @@ namespace RTS
 							else
 							{
 								// Single selection.
-								if (m_hit2.collider.gameObject.layer == LayerMask.NameToLayer("Entity"))
+								if (m_hit2.collider.gameObject.layer == 10 || m_hit2.collider.gameObject.layer == 11)
 								{
 									bool selected = false;
 									foreach (Selectable s in m_selected)
 									{
-										if (s == m_hit2.collider.gameObject.GetComponent<UserData>().data)
+										if (m_hit2.collider.gameObject.GetComponent<UserData>().data != null)
 										{
-											selected = true;
-											break;
+											if (s == m_hit2.collider.gameObject.GetComponent<UserData>().data)
+											{
+												selected = true;
+												break;
+											}
 										}
 									}
 								
@@ -239,18 +283,16 @@ namespace RTS
 		// Remove ghost building information.
 		public static void ClearCursor()
 		{
+			ClearSelection();
 			Object.Destroy(m_cursorBuilding);
-			m_selectionType = Selection.BUILDING;
-			m_cursorMode = Cursor.ORDER;
 		}
+
 		// Clear selection and revert to unit selection mode.
 		public static void ClearSelection()
 		{
 			// Deselect all selected entities.
 			foreach (Selectable sel in m_selected)
-			{
 				sel.Deselect();
-			}
 			
 			// Clear selection type
 			m_selected.Clear();

@@ -29,7 +29,7 @@ namespace RTS
 		public GameObject GetObject() { return m_gameObject; }
 		public string Tag() { return m_gameObject.tag; }
 		public int Cost() { return m_cost; }
-		public Vector3 Position() { return m_gameObject.transform.position; }
+		public Vector3 Position() { return m_gameObject.transform.position + new Vector3(0f, m_mesh.mesh.bounds.size.y/2, 0f); }
 		public bool Destroyed() { return m_destroyed; }
 		public float Radius() { return m_radius; }
 
@@ -37,7 +37,6 @@ namespace RTS
 		{
 			m_ID = a_ID;
 			m_gameObject = new GameObject();
-			m_gameObject.layer = 10;
 			m_gameObject.name = a_name;
 			m_destroyed = false;
 			UserData data = m_gameObject.AddComponent<UserData>();
@@ -61,7 +60,7 @@ namespace RTS
 
 			BoxCollider collider = m_gameObject.AddComponent<BoxCollider>();
 			collider.size = m_mesh.mesh.bounds.size;
-			collider.size = new Vector3(collider.size.x, collider.size.y * 0.9f, collider.size.z);
+			collider.size = new Vector3(collider.size.x, collider.size.y * 2f, collider.size.z);
 			collider.center = new Vector3(0f, m_mesh.mesh.bounds.size.y * 0.5f, 0f);;
 			m_icon = new MinimapIcon(m_miniSize, true);
 		}

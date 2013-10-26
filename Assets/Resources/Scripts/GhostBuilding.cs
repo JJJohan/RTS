@@ -17,6 +17,7 @@ namespace RTS
 		private bool m_copy = false;
 		public BuildingPrefab m_prefab;
 		List<Headquarters> m_headquarters;
+		private int m_collisions;
 
 		public bool Placeable()
 		{
@@ -34,6 +35,7 @@ namespace RTS
 			m_air = false;
 			m_inRange = true;
 			m_placeable = false;
+			m_collisions = 0;
 			
 			// Get list of headquarters buildings
 			m_headquarters = new List<Headquarters>();
@@ -117,12 +119,15 @@ namespace RTS
 
 		public void OnTriggerEnter(Collider a_collision)
 		{
+			++m_collisions;
 			m_placeable = false;
 		}
 
 		public void OnTriggerExit(Collider a_collision)
 		{
-			m_placeable = true;
+			--m_collisions;
+			if (m_collisions == 0)
+				m_placeable = true;
 		}
 	}
 }

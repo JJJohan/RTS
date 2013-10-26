@@ -12,6 +12,14 @@ namespace RTS
 		private static Node[,] m_grid = new Node[50,50];
 		private static int m_gridSize;
 		private static int m_spacing;
+		public static bool m_debug;
+		private static List<Destination> m_destinations;
+
+		public struct Destination
+		{
+			public int hash;
+			public Vector3 pos;
+		}
 
 		private class Node
 		{
@@ -27,11 +35,26 @@ namespace RTS
 
 		public static void Init()
 		{
-			m_fps = 1f/10f;
 			m_timeScale = 0f;
+			m_destinations = new List<Destination>();
 
 			// Generate a list of A* nodes.
-			m_gridSize = 50;
+			if (Performance.PathFinding == Performance.LOW)
+			{
+				m_gridSize = 30;
+				m_fps = 1/2f;
+			}
+			else if (Performance.PathFinding == Performance.MEDIUM)
+			{
+				m_gridSize = 50;
+				m_fps = 1/5f;
+			}
+			else
+			{
+				m_gridSize = 50;
+				m_fps = 1/10f;
+			}
+
 			m_spacing = 1000/m_gridSize;
 			for (int i = 0; i < m_gridSize; ++i)
 			{
@@ -81,6 +104,8 @@ namespace RTS
 					closest = distance;
 				}
 			}
+			startNode.G = 0;
+			startNode.F = (int)Vector2.Distance(startNode.point, a_dest);
 			open.Add(startNode);
 
 			// Find End Node
@@ -110,15 +135,17 @@ namespace RTS
 				// Check if destination is reached
 				if (current.Equals(endNode))
 				{
-					Debug.Log("Found path.");
 					while (current.prev != null)
 					{
 						a_path.Add(new Vector3(current.point.x, current.height, current.point.y));
-						//current.debug.gameObject.renderer.material.color = Color.green;
+						if (m_debug)
+						{
+							current.debug = GameObject.CreatePrimitive(PrimitiveType.Cube);
+							current.debug.transform.position = new Vector3(current.point.x, current.height, current.point.y);
+							current.debug.gameObject.renderer.material.color = Color.green;
+						}
 						current = current.prev;
 					}
-					a_path.Add(new Vector3(current.point.x, current.height, current.point.y));
-					//current.debug.gameObject.renderer.material.color = Color.green;
 					return true;
 				}
 
@@ -236,17 +263,9 @@ namespace RTS
 					{
 						if (a_point.y + a_radius > m_grid[i,j].point.y && a_point.y - a_radius < m_grid[i,j].point.y)
 						{
-							//foreach (Bounds r in obstacles)
-							//{
-								//if (!r.Contains(new Vector3(n.point.x, r.center.y, n.point.y)))
-								{
-									m_grid[i,j].local = true;
-									m_grid[i,j].cost = (int)Vector2.Distance(m_grid[i,j].point, a_dest);
-									//m_grid[i,j].debug = GameObject.CreatePrimitive(PrimitiveType.Cube);
-									//m_grid[i,j].debug.transform.position = new Vector3(m_grid[i,j].point.x, m_grid[i,j].height, m_grid[i,j].point.y);
-									nodes.Add(m_grid[i,j]);
-								}
-							//}
+							m_grid[i,j].local = true;
+							m_grid[i,j].cost = (int)Vector2.Distance(m_grid[i,j].point, a_dest);
+							nodes.Add(m_grid[i,j]);
 						}
 						else
 						{
@@ -260,7 +279,6 @@ namespace RTS
 				}
 			}
 
-			//Debug.Log("Returned " + nodes.Count + " Nodes around " + obstacles.Count + " Obstacles.");
 			return nodes;
 		}
 
@@ -269,69 +287,123 @@ namespace RTS
 			m_fps = 1f/Mathf.Clamp(a_fps, 1f, 30f);
 		}
 
+		public static void AddDestination(int a_unit, Vector3 a_pos)
+		{
+			Destination dest;
+			dest.hash = a_unit;
+			dest.pos = a_pos;
+			m_destinations.Add(dest);
+
+			foreach (Unit u in Main.m_unitList)
+			{
+				if (u.GetHashCode() == a_unit)
+					continue;
+
+				float r = u.Radius() * 2;
+				if (Vector3.Distance(u.GetDestination(0), a_pos) < r/2)
+				{
+					u.OverrideDestination(u.GetDestination(0) + new Vector3(Random.Range(-r, r), 0f, Random.Range(-r, r)));
+				}
+			}
+		}
+
+		public static void RemoveDestination(int a_unit)
+		{
+			foreach (Destination d in m_destinations)
+			{
+				if (d.hash == a_unit)
+				{
+					m_destinations.Remove(d);
+					return;
+				}
+			}
+		}
+
 		public static void Update()
 		{
 			m_timeScale += Time.deltaTime;
+			Ray ray;
 			if (m_timeScale > m_fps)
 			{
 				foreach(Unit unit in Main.m_unitList)
 				{
 					if (unit.Moving())
 					{
-						// Get distance to destination.
-						//float dist = unit.Radius() * ;
-						//float dist = Vector3.Distance(unit.Position(), unit.GetDestination());
-						//totalDist = Mathf.Clamp(totalDist, 0f, dist);
-
-						// Check if the previously calculated detour is now blocked.
-						/*bool pathfind = !unit.Rerouting();
-						Ray ray = new Ray(unit.Position(), unit.GetDestinationDir());
-						if (Physics.Raycast(ray, dist, 1 << 10))
-						{
-							pathfind = true;
-						}*/
-
-						// Calculate a new detour around the obstacle.
-						RaycastHit hit;
+						// Check destination isn't blocked.
 						if (!unit.Rerouting())
 						{
-							int searchArea = 50;
-							int iter = 0;
-							Ray ray = new Ray(unit.Position(), unit.GetDestinationDir());
-							if (Physics.Raycast(ray, out hit, unit.Radius() * 6, 1 << 10))
+							if (Vector3.Distance(unit.Position(), unit.GetDestination()) < unit.Radius() * 4)
 							{
-								List<Vector3> path;
-								bool found = false;
-								while ((!found || searchArea < 200) && iter < 5)
+								ray = new Ray(unit.Position(), unit.GetDestinationDir(0));
+								if (Physics.Raycast(ray, unit.Radius() * 4, 1 << 10 | 1 << 11))
 								{
-									++iter;
-									if (CalculatePath(new Vector2(unit.Position().x, unit.Position().z), new Vector2(unit.GetDestination().x, unit.GetDestination().z), searchArea, out path))
-									{
-										found = true;
-										foreach (Vector3 p in path)
-										{
-											unit.AddDestination(p);
-										}
-									}
-									else
-									{
-										Debug.Log(searchArea);
-										searchArea += 50;
-									}
-								}
-
-								if (!found)
-								{
-									Debug.Log("No path found.");
+									Debug.Log("Stopped");
+									unit.Stop();
 								}
 							}
 						}
-						else
+
+						// Calculate a new detour around the obstacle.
+						ray = new Ray(unit.Position(), unit.GetDestinationDir(1));
+						if (Physics.Raycast(ray, unit.Radius() * 6, 1 << 10))
 						{
-							Ray ray = new Ray(unit.Position(), unit.GetDestinationDir(1));
-							if (!Physics.Raycast(ray, out hit, unit.Radius() * 6, 1 << 10))
+							int searchArea = 50;
+							int iter = 0;
+							List<Vector3> path;
+							bool found = false;
+							while (!found && iter < Performance.PathFinding + 1)
 							{
-								unit.ClearDetour();
+								++iter;
+								if (CalculatePath(new Vector2(unit.Position().x, unit.Position().z),
+									new Vector2(unit.GetDestination(1).x, unit.GetDestination(1).z), searchArea, out path))
+								{
+									unit.ClearDetour();
+									found = true;
+									int index = 1;
+									foreach (Vector3 p in path)
+									{
+										if (m_debug)
+										{
+											// Number waypoints
+											GameObject text = new GameObject();
+											MeshRenderer textRender = text.AddComponent<MeshRenderer>();
+											textRender.material = (Material)UnityEngine.Resources.Load("Fonts/gilMat");
+											textRender.material.shader = Shader.Find("GUI/Text Shader");
+											textRender.material.color = Color.white;
+											TextMesh m_text = text.AddComponent<TextMesh>();
+											m_text.font = (Font)UnityEngine.Resources.Load("Fonts/gil");
+											m_text.text = index.ToString();
+											m_text.alignment = TextAlignment.Center;
+											m_text.anchor = TextAnchor.MiddleCenter;
+											m_text.transform.position = p;
+											++index;
+										}
+				
+										unit.AddDestination(p);
+									}
+								}
+								else
+								{
+									searchArea += 50;
+								}
+							}
+				
+							if (!found)
+							{
+								Debug.Log("No path found.");
+								unit.Stop();
+								return;
+							}
+						}
+
+						if (Performance.PathFinding >= Performance.MEDIUM && unit.Rerouting())
+						{
+							ray = new Ray(unit.Position(), unit.GetDestinationDir(2));
+							if (m_debug) Debug.DrawLine(unit.Position(), unit.Position() + unit.GetDestinationDir(2) * m_spacing, Color.yellow, 1f);
+							float dist = Vector2.Distance(unit.Position(), unit.GetDestination(2));
+							if (!Physics.Raycast(ray, dist, 1 << 10))
+							{
+								unit.ClearDetour(true);
 							}
 						}
 					}

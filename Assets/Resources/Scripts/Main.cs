@@ -25,6 +25,16 @@ namespace RTS
 		public Prefabs prefabs;
 	}
 
+	public static class Performance
+	{
+		public const int LOW = 0;
+		public const int MEDIUM = 1;
+		public const int HIGH = 2;
+
+		public static int Effects;
+		public static int PathFinding;
+	}
+
 	public static class Main
 	{
 		public static List<Unit> m_unitList;
@@ -42,6 +52,16 @@ namespace RTS
 			m_res.funds = 3100;
 			m_res.power = 0;
 			m_res.powerUsed = 0;
+
+			// Init performance
+			Performance.Effects = Performance.LOW;
+			Performance.PathFinding = Performance.HIGH;
+
+			if (Performance.Effects == Performance.LOW)
+			{
+				UnityEngine.Object.Destroy(GameObject.Find("Clouds"));
+				GameObject.Find("Sky Light").GetComponent<Light>().intensity = 0.8f;
+			}
 
 			// Fetch spawn points
 			GameObject[] points = GameObject.FindGameObjectsWithTag("Spawn");
@@ -124,6 +144,20 @@ namespace RTS
 		public static void Draw()
 		{
 			UserInterface.Draw();
+
+			// Debug
+			if (CAS.m_debug)
+			{
+				foreach (Unit unit in m_unitList)
+				{
+					Vector3 current = unit.Position();
+					for (int i = unit.m_destinations.Count - 1; i >= 0; --i)
+					{
+						Debug.DrawLine(current, unit.m_destinations[i], Color.red, 0.1f);
+						current = unit.m_destinations[i];
+					}
+				}
+			}
 		}
 		// Place a building.
 		public static Building CreateBuilding(BuildingPrefab a_prefab, Vector3 a_pos, Vector3 a_rot)
@@ -178,6 +212,16 @@ namespace RTS
 			{
 				throw new UnityException();
 			}*/
+		}
+
+		public static Vector2 Vec3to2(Vector3 a_vec)
+		{
+			return new Vector2(a_vec.x, a_vec.z);
+		}
+	
+		public static Vector3 Vec2to3(Vector2 a_vec)
+		{
+			return new Vector3(a_vec.x, 0f, a_vec.y);
 		}
 	}
 }

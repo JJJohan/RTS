@@ -20,6 +20,9 @@ namespace RTS
 			m_buildPercent = m_buildTime;
 			Main.m_res.buildings.Add(m_ID);
 			m_gameObject.transform.position = m_position;
+
+			if (Performance.Effects == Performance.LOW)
+				m_gameObject.renderer.enabled = true;
 		}
 	}
 }

@@ -56,6 +56,7 @@ namespace RTS
 			m_miniSize = a_properties.miniSize;
 			m_type = Type.DEFAULT;
 			m_gameObject.tag = "Building";
+			m_gameObject.layer = 10;
 
 			base.Init(a_mesh, a_texture);
 
@@ -72,6 +73,9 @@ namespace RTS
 			m_gameObject.transform.eulerAngles = a_rot;
 			m_icon.Process(new Vector2(a_pos.x, -a_pos.z));
 			m_gameObject.transform.position = m_position - new Vector3(0f, m_mesh.mesh.bounds.size.y, 0f);
+
+			if (Performance.Effects == Performance.LOW)
+				m_gameObject.renderer.enabled = false;
 			
 			// Create construction progress text
 			GameObject text = new GameObject();
@@ -101,17 +105,8 @@ namespace RTS
 			m_ghost.name = "Ghost Building";
 		}
 
-		public override void Process()
+		public void Build()
 		{
-			if (m_destroyed)
-				return;
-		
-			base.Process();
-			
-			// Check if destroyed
-			if (m_health - m_damage < 0f)
-				m_destroyed = true;
-			
 			if (!m_built && !m_repairing)
 			{
 				// Increment build percentage.
@@ -126,6 +121,9 @@ namespace RTS
 					m_built = true;
 					m_buildPercent = m_buildTime;
 					Main.m_res.buildings.Add(m_ID);
+
+					if (Performance.Effects == Performance.LOW)
+						m_gameObject.renderer.enabled = true;
 				}
 				
 				// Update building position based on completion percentage.
@@ -139,6 +137,18 @@ namespace RTS
 					m_text.text = ((int)((m_buildPercent / m_buildTime) * 100)).ToString() + "%";
 				}
 			}
+		}
+
+		public override void Process()
+		{
+			if (m_destroyed)
+				return;
+		
+			base.Process();
+			
+			// Check if destroyed
+			if (m_health - m_damage < 0f)
+				m_destroyed = true;
 			
 			// Repair building.
 			if (m_repairing && m_health < m_totalHealth)
