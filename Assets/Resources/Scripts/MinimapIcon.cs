@@ -18,7 +18,7 @@ namespace RTS
             m_icon = new Material(Shader.Find("Self-Illumin/Diffuse"));
             m_icon.mainTexture = (Texture2D)UnityEngine.Resources.Load("Textures/blank");
             m_icon.color = Color.blue;
-            m_size = a_size;
+            m_size = new Vector2(a_size.x, a_size.y);
             m_static = a_static;
             m_iconRect = new Rect(-1, -1, -1, -1);
         }
@@ -38,18 +38,18 @@ namespace RTS
             }
         }
 
-        public void Process(Vector2 a_pos)
-        {
-            m_pos = a_pos;
-			
-            if (m_static && m_iconRect.x > 0f)
-                Debug.LogWarning("Static minimap icon is being updated.");
-        }
-
         public void SetColour(Color a_color)
         {
             m_icon.color = a_color;
         }
+
+		public void Update(Vector2 a_pos)
+		{
+			m_pos = new Vector2(a_pos.x, -a_pos.y);
+
+			if (m_static && m_iconRect.x > 0f)
+				Debug.LogWarning("A static minimap icon is being updated.");
+		}
 
         public void Draw()
         {

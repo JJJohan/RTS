@@ -38,7 +38,7 @@ namespace RTS
 			public const int TANK = 2;
 		}
 
-		public bool Moving() { return m_destinations.Count > 0; }
+		public bool Moving() { return m_destinations.Count > 0 || m_agent.velocity.sqrMagnitude > 10f; }
 		public bool Rerouting() { return m_destinations.Count > 1; }
 		public float DestDistance() { return m_agent.remainingDistance; }
 		public int UnitType() { return m_type; }
@@ -60,8 +60,10 @@ namespace RTS
 			m_turnSpeed = a_properties.turnSpeed;
 			m_gameObject.layer = 11;
 			m_stuckTimer = 0f;
+			Main.m_res.units.Add(m_ID);
 
 			base.Init(a_mesh, a_texture);
+			UpdateGuiPosition();
 
 			// Init navmesh agent
 			m_agent = m_gameObject.AddComponent<NavMeshAgent>();
@@ -71,18 +73,31 @@ namespace RTS
 			m_agent.radius = m_radius;
 			m_agent.height = m_mesh.mesh.bounds.size.y/3;
 			m_agent.baseOffset = 0f;
-			//m_gameObject.transform.position = m_agent.transform.position;
 			m_destinations = new List<Vector3>();
+
+			// Create icon
+			Vector2 pos = new Vector2(Position().x, Position().z);
+			UserInterface.m_sidePanel.m_minimap.AddIcon(m_miniSize, pos, false, out m_icon);
 
 			CAS.AddDestination(this.GetHashCode(), Position());
 		}
 
 		public override void Process()
 		{
-			UpdateGuiPosition();
-
 			if (Moving())
 			{
+				UpdateGuiPosition();
+				m_icon.Update(new Vector2(Position().x, Position().z));
+
+				// Update angle based on terrain
+				RaycastHit hit;
+				Ray ray = new Ray(Position(), Vector3.down);
+				if (Physics.Raycast(ray, out hit, m_mesh.mesh.bounds.size.y, 1 << 8))
+				{
+					float yaw = m_gameObject.transform.eulerAngles.y;
+					m_gameObject.transform.rotation = Quaternion.FromToRotation(m_gameObject.transform.up, hit.normal) *  Quaternion.Euler(0f, yaw, 0f);
+				}
+
 				if (m_agent.velocity.sqrMagnitude < 5f)
 				{
 					m_stuckTimer += Time.deltaTime;
@@ -219,7 +234,7 @@ namespace RTS
 			m_agent.SetDestination(m_destinations[m_destinations.Count - 1]);
 		}
 
-		public void SetDestination(Vector3 a_pos)
+		public virtual void SetDestination(Vector3 a_pos)
 		{
 			m_destinations.Clear();
 			AddDestination(a_pos);
@@ -286,6 +301,23 @@ namespace RTS
 			base.Deselect();
 
 			m_gameObject.GetComponent<MeshRenderer>().material.color = Color.white;
+		}
+
+		public override void Destroy()
+		{
+			for (int i = 0; i < Main.m_res.units.Count; ++i)
+			{
+				if (Main.m_res.units[i] == m_ID)
+				{
+					Main.m_res.units.Remove(Main.m_res.units[i]);
+					break;
+				}
+			}
+
+			if (m_gameObject)
+				Object.Destroy(m_gameObject);
+
+			base.Destroy();
 		}
 	}
 }

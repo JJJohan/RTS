@@ -21,7 +21,8 @@ namespace RTS
 		protected MeshRenderer m_renderer;
 		protected bool m_destroyed;
 		protected float m_radius;
-				
+		protected bool m_selected;
+
 		private GameObject m_selectionBox;
 		private GameObject m_healthFront;
 		private GameObject m_healthBack;
@@ -41,6 +42,7 @@ namespace RTS
 			m_destroyed = false;
 			UserData data = m_gameObject.AddComponent<UserData>();
 			data.data = this;
+			m_selected = false;
 
 			m_mesh = m_gameObject.AddComponent<MeshFilter>();
 			m_renderer = m_gameObject.AddComponent<MeshRenderer>();
@@ -61,8 +63,7 @@ namespace RTS
 			BoxCollider collider = m_gameObject.AddComponent<BoxCollider>();
 			collider.size = m_mesh.mesh.bounds.size;
 			collider.size = new Vector3(collider.size.x, collider.size.y * 2f, collider.size.z);
-			collider.center = new Vector3(0f, m_mesh.mesh.bounds.size.y * 0.5f, 0f);;
-			m_icon = new MinimapIcon(m_miniSize, true);
+			collider.center = new Vector3(0f, m_mesh.mesh.bounds.size.y * 0.5f, 0f);
 		}
 
 		public void GetIcon(out MinimapIcon a_icon)
@@ -107,6 +108,8 @@ namespace RTS
 		
 		public virtual void Select()
 		{
+			m_selected = true;
+
 			// Set minimap icon colour.
 			m_icon.SetColour(Color.white);
 			
@@ -147,6 +150,8 @@ namespace RTS
 		
 		public virtual void Deselect()
 		{
+			m_selected = false;
+
 			// Set minimap icon colour.
 			m_icon.SetColour(Color.blue);
 			
@@ -158,6 +163,8 @@ namespace RTS
 		
 		public virtual void Destroy()
 		{
+			UserInterface.m_sidePanel.m_minimap.RemoveIcon(m_icon);
+
 			if (m_selectionBox)
 				Object.Destroy (m_selectionBox);
 			

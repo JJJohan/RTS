@@ -46,10 +46,17 @@ namespace RTS
 			m_gameObject.name = "Minimap";
 		}
 
-		public void AddIcon(ref MinimapIcon a_icon)
+		public void AddIcon(Vector2 a_size, Vector2 a_pos, bool a_static, out MinimapIcon a_icon)
 		{
+			a_icon = new MinimapIcon(a_size, a_static);
+			a_icon.Update(a_pos);
 			a_icon.SetBounds(m_bounds);
 			m_icons.Add(a_icon);
+		}
+
+		public void RemoveIcon(MinimapIcon a_icon)
+		{
+			m_icons.Remove(a_icon);
 		}
 
 		public Vector2 WorldToMap(Vector2 a_pos)
@@ -72,8 +79,8 @@ namespace RTS
 		public void Draw()
 		{   
 			// Check if we have power
-			if (Main.m_res.powerUsed > Main.m_res.power)
-				return;
+			//if (Main.m_res.powerUsed > Main.m_res.power)
+			//	return;
 
 			// Draw minimap
 			Graphics.DrawTexture(m_bounds, m_minimap.mainTexture, m_minimap);

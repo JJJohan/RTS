@@ -13,8 +13,10 @@ namespace RTS
 
 		public void Finish()
 		{
-			Object.Destroy(m_text.gameObject);
-			Object.Destroy(m_ghost);
+			if (m_text)
+				Object.Destroy(m_text.gameObject);
+			if (m_ghost)
+				Object.Destroy(m_ghost);
 			m_health = m_totalHealth;
 			m_built = true;
 			m_buildPercent = m_buildTime;

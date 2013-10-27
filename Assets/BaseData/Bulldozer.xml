@@ -15,7 +15,7 @@
 		Speed = "8"
 		Acceleration = "3"
 		TurnSpeed = "90"
-		MiniMapIconSize = "1, 1"
+		MiniMapIconSize = "3, 3"
 	/>
 	
 	<!-- Tech tree variables. -->

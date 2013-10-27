@@ -45,9 +45,6 @@ namespace RTS
 					UnitTemplate template = new UnitTemplate();
 					Unit newUnit = template.Load(unit.prefab, m_position - new Vector3(15f, 0f, 15f), new Vector3(0f, 90f, 0f));
 					Main.m_unitList.Add(newUnit);
-					MinimapIcon icon;
-					newUnit.GetIcon(out icon);
-					UserInterface.m_sidePanel.m_minimap.AddIcon(ref icon);
 
 					delete = unit;
 					break;
@@ -83,7 +80,7 @@ namespace RTS
 			base.Deselect();
 
 			SidePanel panel = UserInterface.m_sidePanel;
-			panel.ProcessBuildingList();
+			panel.Clear();
 			panel.UnitEvent -= new SidePanel.UnitHandler(QueueUnit);
 		}
 	}

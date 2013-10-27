@@ -67,29 +67,18 @@ namespace RTS
 		}
 
 		public void Construct(Vector3 a_pos, Vector3 a_rot)
-		{	
+		{
 			// Set position and rotation.
 			m_position = a_pos;
 			m_gameObject.transform.eulerAngles = a_rot;
-			m_icon.Process(new Vector2(a_pos.x, -a_pos.z));
 			m_gameObject.transform.position = m_position - new Vector3(0f, m_mesh.mesh.bounds.size.y, 0f);
+
+			// Create icon
+			Vector2 pos = new Vector2(Position().x, Position().z);
+			UserInterface.m_sidePanel.m_minimap.AddIcon(m_miniSize, pos, true, out m_icon);
 
 			if (Performance.Effects == Performance.LOW)
 				m_gameObject.renderer.enabled = false;
-			
-			// Create construction progress text
-			GameObject text = new GameObject();
-			MeshRenderer textRender = text.AddComponent<MeshRenderer>();
-			textRender.material = (Material)UnityEngine.Resources.Load("Fonts/gilMat");
-			textRender.material.shader = Shader.Find("GUI/Text Shader");
-			textRender.material.color = Color.white;
-			m_text = text.AddComponent<TextMesh>();
-			m_text.font = (Font)UnityEngine.Resources.Load("Fonts/gil");
-			m_text.text = "0%";
-			m_text.alignment = TextAlignment.Center;
-			m_text.anchor = TextAnchor.MiddleCenter;
-			m_text.transform.position = m_position + new Vector3(0f, m_mesh.mesh.bounds.size.y / 2, 0f);
-			text.name = "Building Text";
 			
 			// Create ghost copy
 			m_ghost = new GameObject();
@@ -135,6 +124,22 @@ namespace RTS
 				{
 					m_text.transform.rotation = Camera.main.transform.rotation;// * new Quaternion(0.707f, 0f, 0f, 0.707f);
 					m_text.text = ((int)((m_buildPercent / m_buildTime) * 100)).ToString() + "%";
+				}
+				else
+				{
+					// Create construction progress text
+					GameObject text = new GameObject();
+					MeshRenderer textRender = text.AddComponent<MeshRenderer>();
+					textRender.material = (Material)UnityEngine.Resources.Load("Fonts/gilMat");
+					textRender.material.shader = Shader.Find("GUI/Text Shader");
+					textRender.material.color = Color.white;
+					m_text = text.AddComponent<TextMesh>();
+					m_text.font = (Font)UnityEngine.Resources.Load("Fonts/gil");
+					m_text.text = "0%";
+					m_text.alignment = TextAlignment.Center;
+					m_text.anchor = TextAnchor.MiddleCenter;
+					m_text.transform.position = m_position + new Vector3(0f, m_mesh.mesh.bounds.size.y / 2, 0f);
+					text.name = "Building Text";
 				}
 			}
 		}

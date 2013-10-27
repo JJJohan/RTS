@@ -21,9 +21,13 @@ namespace RTS
 			{
 				if (!m_building.Built())
 				{
-					if (!Moving() && Vector2.Distance(Main.Vec3to2(m_building.Position()), Main.Vec3to2(Position())) < Radius() * 8)
+					if (Vector2.Distance(Main.Vec3to2(m_building.Position()), Main.Vec3to2(Position())) < Radius() * 6)
 					{
-						m_building.Build();
+						Stop();
+						if (!Moving())
+						{
+							m_building.Build();
+						}
 					}
 				}
 				else
@@ -35,9 +39,30 @@ namespace RTS
 			base.Process();
 		}
 
+		public override void SetDestination(Vector3 a_pos)
+		{
+			m_building = null;
+
+			base.SetDestination(a_pos);
+		}
+
 		public void Build(ref Building a_building)
 		{
 			m_building = a_building;
+		}
+
+		public override void Select()
+		{
+			base.Select();
+
+			UserInterface.m_sidePanel.ListBuildings();
+		}
+
+		public override void Deselect()
+		{
+			base.Deselect();
+
+			UserInterface.m_sidePanel.Clear();
 		}
 	}
 }

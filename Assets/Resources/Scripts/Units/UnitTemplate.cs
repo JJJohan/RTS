@@ -13,7 +13,7 @@ namespace RTS
 			properties.health = a_prefab.health;
 			properties.buildTime = a_prefab.buildTime;
 			properties.cost = a_prefab.cost;		
-			properties.miniSize = new Vector2(6f, 6f);
+			properties.miniSize = a_prefab.miniMapSize;
 			properties.ID = a_prefab.ID;
 			properties.turnSpeed = a_prefab.turnSpeed;
 			properties.speed = a_prefab.speed;

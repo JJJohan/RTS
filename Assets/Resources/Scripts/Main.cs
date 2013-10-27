@@ -14,6 +14,7 @@ namespace RTS
 		public Resources()
 		{
 			buildings = new List<string>();
+			units = new List<string>();
 			prefabs.buildingPrefabs = new Dictionary<string, BuildingPrefab>();
 			prefabs.unitPrefabs = new Dictionary<string, UnitPrefab>();
 		}
@@ -22,6 +23,7 @@ namespace RTS
 		public int power;
 		public int funds;
 		public List<string> buildings;
+		public List<string> units;
 		public Prefabs prefabs;
 	}
 
@@ -76,11 +78,14 @@ namespace RTS
 
 			// Create base spawn
 			Headquarters spawn;
-			BuildingPrefab prefab;
-			m_res.prefabs.buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out prefab);
-			spawn = (Headquarters)CreateBuilding(prefab, m_spawnPoints[0], Vector3.zero);
+			BuildingPrefab buildingPrefab;
+			m_res.prefabs.buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out buildingPrefab);
+			spawn = (Headquarters)CreateBuilding(buildingPrefab, m_spawnPoints[0], Vector3.zero);
 			spawn.Finish();
 			Camera.main.GetComponent<CameraMovement>().SetPos(new Vector3(m_spawnPoints[0].x, m_spawnPoints[0].y + 50, m_spawnPoints[0].z - 30));
+
+			// Create dozer and select it
+			SpawnDozer(m_spawnPoints[0]);
 		}
 		// Update is called once per frame
 		public static void Update()
@@ -167,10 +172,7 @@ namespace RTS
 			Building building = template.Load(a_prefab);
 			building.Construct(a_pos, a_rot);
 			m_buildingList.Add(building);
-			MinimapIcon icon;
-			building.GetIcon(out icon);
-			UserInterface.m_sidePanel.m_minimap.AddIcon(ref icon);
-			
+
 			return building;
 		}
 		// Create a ghost building to show where it is being placed.
@@ -222,6 +224,17 @@ namespace RTS
 		public static Vector3 Vec2to3(Vector2 a_vec)
 		{
 			return new Vector3(a_vec.x, 0f, a_vec.y);
+		}
+
+		// Create a new dozer at map spawn
+		private static void SpawnDozer(Vector3 a_pos)
+		{
+			UnitPrefab unitPrefab;
+			m_res.prefabs.unitPrefabs.TryGetValue("BULLDOZER", out unitPrefab);
+			UnitTemplate template = new UnitTemplate();
+			Unit newUnit = template.Load(unitPrefab, a_pos - new Vector3(15f, 0f, 15f), new Vector3(0f, 90f, 0f));
+			m_unitList.Add(newUnit);
+			InputHandler.SpawnSelect(ref newUnit);
 		}
 	}
 }

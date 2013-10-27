@@ -86,22 +86,13 @@ namespace RTS
 								else if (hit.collider.tag == "Building")
 								{
 									Building building = (Building)hit.collider.GetComponent<UserData>().data;
-									Vector3[] corners = new Vector3[4];
-									corners[0] = hit.collider.transform.position + new Vector3(-hit.collider.bounds.size.x * 0.5f, 0f, -hit.collider.bounds.size.z * 0.5f);
-									corners[1] = hit.collider.transform.position + new Vector3(hit.collider.bounds.size.x * 0.5f, 0f, -hit.collider.bounds.size.z * 0.5f);
-									corners[2] = hit.collider.transform.position + new Vector3(-hit.collider.bounds.size.x * 0.5f, 0f, hit.collider.bounds.size.z * 0.5f);
-									corners[3] = hit.collider.transform.position + new Vector3(hit.collider.bounds.size.x * 0.5f, 0f, hit.collider.bounds.size.z * 0.5f);
+									Vector3[] corners = GetCorners(building);
 									int closest = 0;
 
 									foreach(Selectable s in m_selected)
 									{
 										if (s.GetObject().tag == "Unit")
 										{
-											if (((Unit)s).UnitType() == Unit.Type.DOZER)
-											{
-												((Dozer)s).Build(ref building);
-											}
-
 											for (int i = 0; i < 3; ++i)
 											{
 												if (Vector3.Distance(corners[i], s.Position()) > Vector3.Distance(corners[i+1], s.Position()))
@@ -109,6 +100,12 @@ namespace RTS
 											}
 
 											((Unit)s).SetDestination(new Vector3(corners[closest].x, hit.transform.position.y, corners[closest].z));
+
+											if (((Unit)s).UnitType() == Unit.Type.DOZER)
+											{
+												((Dozer)s).Build(ref building);
+											}
+
 										}
 									}
 								}
@@ -239,8 +236,30 @@ namespace RTS
 						{
 							if (m_cursorBuilding.GetComponent<GhostBuilding>().Placeable())
 							{
-								Main.CreateBuilding(m_cursorBuilding.GetComponent<GhostBuilding>().m_prefab, m_cursorBuilding.transform.position, m_cursorBuilding.transform.eulerAngles);
+								Building building = Main.CreateBuilding(m_cursorBuilding.GetComponent<GhostBuilding>().m_prefab, m_cursorBuilding.transform.position, m_cursorBuilding.transform.eulerAngles);
 								ClearCursor();
+
+								Vector3[] corners = GetCorners(building);
+								int closest = 0;
+
+								foreach(Selectable s in m_selected)
+								{
+									if (s.GetObject().tag == "Unit")
+									{
+										if (((Unit)s).UnitType() == Unit.Type.DOZER)
+										{
+											for (int i = 0; i < 3; ++i)
+											{
+												if (Vector3.Distance(corners[i], s.Position()) > Vector3.Distance(corners[i+1], s.Position()))
+													closest = i+1;
+											}
+
+											((Dozer)s).SetDestination(new Vector3(corners[closest].x, building.Position().y, corners[closest].z));
+											((Dozer)s).Build(ref building);
+										}
+									}
+								}
+
 								break;
 							}
 						}
@@ -283,7 +302,16 @@ namespace RTS
 		// Remove ghost building information.
 		public static void ClearCursor()
 		{
-			ClearSelection();
+			if (m_selected.Count > 0)
+			{
+				m_selectionType = Selection.UNIT;
+				m_cursorMode = Cursor.ORDER;
+			}
+			else
+			{
+				ClearSelection();
+			}
+
 			Object.Destroy(m_cursorBuilding);
 		}
 
@@ -298,6 +326,32 @@ namespace RTS
 			m_selected.Clear();
 			m_selectionType = Selection.NONE;
 			m_cursorMode = Cursor.SELECTION;
+		}
+
+		// Select spawn unit
+		public static void SpawnSelect(ref Unit a_unit)
+		{
+			a_unit.Select();
+			m_selected.Add(a_unit);
+			m_selectionType = Selection.UNIT;
+			m_cursorMode = Cursor.ORDER;
+		}
+
+		// Fetch array of building corners
+		private static Vector3[] GetCorners(Building a_building)
+		{
+			Bounds bounds = a_building.GetObject().collider.bounds;
+			Vector3[] corners = new Vector3[4];
+			//corners[0] = a_building.Position() + new Vector3(-bounds.size.x * 0.5f, 0f, -bounds.size.z * 0.5f);
+			//corners[1] = a_building.Position() + new Vector3(bounds.size.x * 0.5f, 0f, -bounds.size.z * 0.5f);
+			//corners[2] = a_building.Position() + new Vector3(-bounds.size.x * 0.5f, 0f, bounds.size.z * 0.5f);
+			//corners[3] = a_building.Position() + new Vector3(bounds.size.x * 0.5f, 0f, bounds.size.z * 0.5f);
+			corners[0] = a_building.Position() + new Vector3(-bounds.size.x * 0.5f, 0f, 0f);
+			corners[1] = a_building.Position() + new Vector3(bounds.size.x * 0.5f, 0f, 0f);
+			corners[2] = a_building.Position() + new Vector3(0f, 0f, -bounds.size.z * 0.5f);
+			corners[3] = a_building.Position() + new Vector3(0f, 0f, bounds.size.z * 0.5f);
+
+			return corners;
 		}
 	}
 }

@@ -28,8 +28,9 @@ namespace RTS
 
 		private struct Type
 		{
-			public const int Building = 0;
-			public const int Unit = 1;
+			public const int None = 0;
+			public const int Building = 1;
+			public const int Unit = 2;
 		}
 
 		public static Material m_guiMat;
@@ -49,9 +50,11 @@ namespace RTS
 		private int m_buildingCount;
 		private int m_index;
 		private List<Button> m_buttons;
+		private List<string> m_unitList;
 		private List<PrefabButton> m_prefabButtons;
 		private static Rect[] m_origPositions;
 		private static Rect[] m_positions;
+		private static int m_display;
 
 		public SidePanel()
 		{
@@ -59,6 +62,7 @@ namespace RTS
 			m_index = 0;
 			m_prefabButtons = new List<PrefabButton>();
 			m_buildingCount = -1;
+			m_display = Type.Building;
 			
 			m_positions = new Rect[8];
 			m_origPositions = new Rect[8];
@@ -133,7 +137,10 @@ namespace RTS
 			if (Main.m_res.buildings.Count != m_buildingCount)
 			{
 				m_buildingCount = Main.m_res.buildings.Count;
-				ProcessBuildingList();
+				if (m_display == Type.Building)
+					ListBuildings();
+				else if (m_display == Type.Unit)
+					ListUnits();
 			}
 			
 			// Update buttons
@@ -193,11 +200,18 @@ namespace RTS
 			}
 		}
 
+		private void ListUnits()
+		{
+			ListUnits(m_unitList);
+		}
+
 		public void ListUnits(List<string> a_units)
 		{
 			// Clear button list
 			m_prefabButtons.Clear();
-			
+			m_display = Type.Unit;
+			m_unitList = a_units;
+
 			// Check against building tech requirements.
 			foreach (string key in a_units)
 			{
@@ -234,10 +248,18 @@ namespace RTS
 			m_prefabButtons.Sort((x, y) => x.unit.menuID.CompareTo(y.unit.menuID));
 		}
 
-		public void ProcessBuildingList()
+		public void Clear()
 		{
 			// Clear button list
 			m_prefabButtons.Clear();
+			m_display = Type.None;
+		}
+
+		public void ListBuildings()
+		{
+			// Clear button list
+			m_prefabButtons.Clear();
+			m_display = Type.Building;
 			
 			// Check against building tech requirements.
 			foreach (string key in Main.m_res.prefabs.buildingPrefabs.Keys)
