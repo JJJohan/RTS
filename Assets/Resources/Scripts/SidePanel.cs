@@ -13,6 +13,7 @@ namespace RTS
 	public class UnitArgs : EventArgs
 	{
 		public UnitPrefab prefab;
+		public bool create;
 	}
 
 	public class SidePanel
@@ -21,8 +22,10 @@ namespace RTS
 		{
 			public UnitPrefab unit;
 			public BuildingPrefab building;
+			public int ID;
 			public int cost;
 			public int type;
+			public int count;
 			public Texture2D cameo;
 		}
 
@@ -50,11 +53,13 @@ namespace RTS
 		private int m_buildingCount;
 		private int m_index;
 		private List<Button> m_buttons;
-		private List<string> m_unitList;
+		private List<int> m_unitList;
 		private List<PrefabButton> m_prefabButtons;
 		private static Rect[] m_origPositions;
 		private static Rect[] m_positions;
 		private static int m_display;
+		private static Texture2D m_progressTex;
+		private static Material m_progressMat;
 
 		public SidePanel()
 		{
@@ -63,6 +68,9 @@ namespace RTS
 			m_prefabButtons = new List<PrefabButton>();
 			m_buildingCount = -1;
 			m_display = Type.Building;
+			m_progressTex = (Texture2D)UnityEngine.Resources.Load("Textures/angular");
+			m_progressMat = new Material(Shader.Find("ButtonProgress"));
+			m_progressMat.color = new Color(1f, 1f, 0f, 0.5f);
 			
 			m_positions = new Rect[8];
 			m_origPositions = new Rect[8];
@@ -149,14 +157,14 @@ namespace RTS
 				// Left & Right Arrows
 				if (m_index > 0)
 				{
-					if (m_buttonLeft.Process(Main.m_event) == Button.UP)
+					if (m_buttonLeft.Process(Main.m_event) == Button.MOUSE1UP)
 					{
 						--m_index;
 					}
 				}
 				if (m_index < m_prefabButtons.Count / 8)
 				{
-					if (m_buttonRight.Process(Main.m_event) == Button.UP)
+					if (m_buttonRight.Process(Main.m_event) == Button.MOUSE1UP)
 					{
 						++m_index;
 					}
@@ -170,10 +178,11 @@ namespace RTS
 						break;
 					
 					// Check if we can afford the building or unit.
-					m_buttons[index].Lock(Main.m_res.funds < m_prefabButtons[index].cost);
+					m_buttons[index].Lock(Main.m_res.funds < m_prefabButtons[index].cost && m_prefabButtons[index].count < 20);
 					
 					// Process buttons
-					if (m_buttons[index].Process(Main.m_event) == Button.UP)
+					int eventType = m_buttons[index].Process(Main.m_event);
+					if (eventType == Button.MOUSE1UP)
 					{
 						if (m_prefabButtons[index].type == Type.Building)
 						{
@@ -191,9 +200,31 @@ namespace RTS
 							{
 								UnitArgs args = new UnitArgs();
 								args.prefab = m_prefabButtons[index].unit;
+								args.create = true;
 								UnitEvent(this, args);
+
+								PrefabButton button = m_prefabButtons[index];
+								++button.count;
+								m_prefabButtons[index] = button;
+
 								break;
 							}
+						}
+					}
+					else if (eventType == Button.MOUSE2UP)
+					{
+						if (m_prefabButtons[index].type == Type.Unit && m_prefabButtons[index].count > 0)
+						{
+							UnitArgs args = new UnitArgs();
+							args.prefab = m_prefabButtons[index].unit;
+							args.create = false;
+							UnitEvent(this, args);
+
+							PrefabButton button = m_prefabButtons[index];
+							--button.count;
+							m_prefabButtons[index] = button;
+
+							break;
 						}
 					}
 				}
@@ -205,7 +236,7 @@ namespace RTS
 			ListUnits(m_unitList);
 		}
 
-		public void ListUnits(List<string> a_units)
+		public void ListUnits(List<int> a_units)
 		{
 			// Clear button list
 			m_prefabButtons.Clear();
@@ -213,7 +244,7 @@ namespace RTS
 			m_unitList = a_units;
 
 			// Check against building tech requirements.
-			foreach (string key in a_units)
+			foreach (int key in a_units)
 			{
 				UnitPrefab prefab = Main.m_res.prefabs.unitPrefabs[key];
 				
@@ -240,6 +271,8 @@ namespace RTS
 					button.cameo = prefab.cameo;
 					button.cost = prefab.cost;
 					button.type = Type.Unit;
+					button.ID = prefab.ID;
+					button.count = 0;
 					m_prefabButtons.Add(button);
 				}
 			}
@@ -262,7 +295,7 @@ namespace RTS
 			m_display = Type.Building;
 			
 			// Check against building tech requirements.
-			foreach (string key in Main.m_res.prefabs.buildingPrefabs.Keys)
+			foreach (int key in Main.m_res.prefabs.buildingPrefabs.Keys)
 			{
 				BuildingPrefab prefab = Main.m_res.prefabs.buildingPrefabs[key];
 				
@@ -289,6 +322,8 @@ namespace RTS
 					button.cameo = prefab.cameo;
 					button.cost = prefab.cost;
 					button.type = Type.Building;
+					button.ID = prefab.ID;
+					button.count = 0;
 					m_prefabButtons.Add(button);
 				}
 			}
@@ -322,6 +357,7 @@ namespace RTS
 				int index = i + (m_index * 8);
 				if (index >= m_prefabButtons.Count)
 					break;
+
 				m_buttons[i].Draw();
 				Graphics.DrawTexture(m_positions[i], m_prefabButtons[index].cameo, m_buttons[i].GetMaterial());
 			}
@@ -339,6 +375,63 @@ namespace RTS
 				}
 					
 				GUI.Label(UserInterface.ResizeGUI(new Rect(1920 - 172, 914, 100, 27)), m_index + 1 + " / " + (m_prefabButtons.Count / 8 + 1), m_textStyle); 
+			}
+		}
+
+		public void UpdateQueue(int m_ID, bool a_add)
+		{
+			for (int i = 0; i < 8; ++i)
+			{
+				int index = i + (m_index * 8);
+				if (index >= m_prefabButtons.Count)
+					break;
+
+				if (m_prefabButtons[index].ID == m_ID)
+				{
+					if (a_add)
+					{
+						PrefabButton button = m_prefabButtons[index];
+						++button.count;
+						m_prefabButtons[index] = button;
+					}
+					else
+					{
+						PrefabButton button = m_prefabButtons[index];
+						--button.count;
+						m_prefabButtons[index] = button;
+					}
+				}
+			}
+		}
+
+		public void DrawQueue(int m_current, float a_percent)
+		{
+			if (m_display != Type.Unit)
+				return;
+
+			for (int i = 0; i < 8; ++i)
+			{
+				int index = i + (m_index * 8);
+				if (index >= m_prefabButtons.Count)
+					break;
+
+				if (m_prefabButtons[index].count > 0)
+				{
+					// Check if front queue item
+					if (m_prefabButtons[index].ID == m_current)
+						m_progressMat.SetFloat("_Cutoff", a_percent/2);
+					else
+						m_progressMat.SetFloat("_Cutoff", 0f);
+
+					// Draw progress circle
+					Graphics.DrawTexture(m_positions[index], m_progressTex, m_progressMat);
+
+					// Draw number
+					if (m_prefabButtons[index].count > 1)
+					{
+						GUI.Label(m_positions[i], m_prefabButtons[index].count.ToString(), m_textStyle);
+					}
+				}
 			}
 		}
 	}

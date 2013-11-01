@@ -14,7 +14,7 @@ namespace RTS
 		protected float m_damage;
 		protected Vector2 m_miniSize;
 		protected MinimapIcon m_icon;
-		protected string m_ID;
+		protected int m_ID;
 		protected string m_name;
 		protected int m_type;
 		protected MeshFilter m_mesh;
@@ -33,8 +33,9 @@ namespace RTS
 		public Vector3 Position() { return m_gameObject.transform.position + new Vector3(0f, m_mesh.mesh.bounds.size.y/2, 0f); }
 		public bool Destroyed() { return m_destroyed; }
 		public float Radius() { return m_radius; }
+		public int ID() { return m_ID; }
 
-		public Selectable(string a_ID, string a_name)
+		public Selectable(int a_ID, string a_name)
 		{
 			m_ID = a_ID;
 			m_gameObject = new GameObject();
@@ -54,6 +55,7 @@ namespace RTS
 			// Init model and texture
 			m_renderer.material.mainTexture = a_texture;
 			m_mesh.mesh = a_mesh;
+			m_position = m_gameObject.transform.position;
 
 			// Calculate radius
 			m_radius = m_mesh.mesh.bounds.size.x;
@@ -80,9 +82,12 @@ namespace RTS
 		{
 			if (m_selectionBox)
 			{
-				m_selectionBox.transform.position = m_gameObject.transform.position;
-				m_healthFront.transform.position = m_gameObject.transform.position;
-				m_healthBack.transform.position = m_gameObject.transform.position;
+				// Find largest scale vector.
+				Vector3 bounds = m_gameObject.GetComponent<MeshFilter>().mesh.bounds.size;
+
+				m_selectionBox.transform.position = m_gameObject.transform.position + new Vector3(0f, bounds.y/2, 0f);
+				m_healthFront.transform.position = m_gameObject.transform.position + new Vector3(0f, bounds.y/2, 0f);
+				m_healthBack.transform.position = m_gameObject.transform.position + new Vector3(0f, bounds.y/2, 0f);
 			}
 		}
 		
@@ -173,6 +178,11 @@ namespace RTS
 			
 			if (m_healthBack)
 				Object.Destroy (m_healthBack);
+		}
+
+		public virtual void Draw()
+		{
+			
 		}
 	}
 }

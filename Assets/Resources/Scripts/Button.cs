@@ -5,8 +5,10 @@ namespace RTS
 	public class Button
 	{
 		public const int UNPRESSED = 0;
-		public const int DOWN = 1;
-		public const int UP = 2;
+		public const int MOUSE1DOWN = 1;
+		public const int MOUSE1UP = 2;
+		public const int MOUSE2DOWN = 3;
+		public const int MOUSE2UP = 4;
 		private Rect m_bounds;
 		private Rect m_origBounds;
 		private Texture2D m_up;
@@ -59,11 +61,11 @@ namespace RTS
 			
 			if (a_event.type == EventType.MouseDown)
 			{
-				return Down(a_event.mousePosition);
+				return Down(a_event.mousePosition, a_event.button);
 			}
 			else if (a_event.type == EventType.MouseUp)
 			{
-				return Up(a_event.mousePosition);
+				return Up(a_event.mousePosition, a_event.button);
 			}
 			else if (m_current == m_down && a_event.mousePosition.x > 0 && !m_bounds.Contains(a_event.mousePosition))
 			{
@@ -73,7 +75,7 @@ namespace RTS
 			return UNPRESSED;
 		}
 
-		public int Up(Vector2 a_pos)
+		public int Up(Vector2 a_pos, int a_button)
 		{
 			if (m_locked)
 				return UNPRESSED;
@@ -81,13 +83,16 @@ namespace RTS
 			if (m_bounds.Contains(a_pos))
 			{
 				m_current = m_up;
-				return UP;
+				if (a_button == 0)
+					return MOUSE1UP;
+				else
+					return MOUSE2UP;
 			}
 			
 			return UNPRESSED;
 		}
 
-		public int Down(Vector2 a_pos)
+		public int Down(Vector2 a_pos, int a_button)
 		{
 			if (m_locked)
 				return UNPRESSED;
@@ -95,7 +100,11 @@ namespace RTS
 			if (m_bounds.Contains(a_pos))
 			{
 				m_current = m_down;
-				return DOWN;
+
+				if (a_button == 0)
+					return MOUSE1DOWN;
+				else
+					return MOUSE2DOWN;
 			}
 			
 			return UNPRESSED;

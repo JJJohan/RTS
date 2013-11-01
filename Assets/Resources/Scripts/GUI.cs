@@ -9,7 +9,7 @@ namespace RTS
 		public static Vector2 m_resolution;
 
 		public static void InitGUI()
-		{		   
+		{
 			// Init
 			m_resolution = new Vector2(Screen.width, Screen.height);
 
@@ -36,7 +36,7 @@ namespace RTS
 		}
 
 		public static void Draw()
-		{					   
+		{
 			// Draw selection rectangle.
 			if (InputHandler.m_clickPos.x > -0.5f)
 			{

@@ -85,6 +85,12 @@ namespace RTS
 			// Draw minimap
 			Graphics.DrawTexture(m_bounds, m_minimap.mainTexture, m_minimap);
 			
+			if (m_gameObject)
+				Object.Destroy(m_gameObject);
+		}
+
+		public void DrawIcons()
+		{
 			// Draw icons
 			foreach (MinimapIcon icon in m_icons)
 				icon.Draw();
@@ -105,9 +111,6 @@ namespace RTS
 			camPos = WorldToMap(camPos);
 			Line.Draw(camPos, camPos + left2, Color.white);
 			Line.Draw(camPos, camPos + right2, Color.white);
-			
-			if (m_gameObject)
-				Object.Destroy(m_gameObject);
 		}
 	}
 }

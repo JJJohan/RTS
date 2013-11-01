@@ -13,17 +13,17 @@ namespace RTS
 	{
 		public Resources()
 		{
-			buildings = new List<string>();
-			units = new List<string>();
-			prefabs.buildingPrefabs = new Dictionary<string, BuildingPrefab>();
-			prefabs.unitPrefabs = new Dictionary<string, UnitPrefab>();
+			buildings = new List<int>();
+			units = new List<int>();
+			prefabs.buildingPrefabs = new Dictionary<int, BuildingPrefab>();
+			prefabs.unitPrefabs = new Dictionary<int, UnitPrefab>();
 		}
 
 		public int powerUsed;
 		public int power;
 		public int funds;
-		public List<string> buildings;
-		public List<string> units;
+		public List<int> buildings;
+		public List<int> units;
 		public Prefabs prefabs;
 	}
 
@@ -44,6 +44,7 @@ namespace RTS
 		public static List<Vector3> m_spawnPoints;
 		public static Resources m_res;
 		public static Event m_event;
+		public static Fog m_fog;
 
 		public static void Init()
 		{	
@@ -54,9 +55,10 @@ namespace RTS
 			m_res.funds = 3100;
 			m_res.power = 0;
 			m_res.powerUsed = 0;
+			m_fog = new Fog();
 
 			// Init performance
-			Performance.Effects = Performance.LOW;
+			Performance.Effects = Performance.HIGH;
 			Performance.PathFinding = Performance.HIGH;
 
 			if (Performance.Effects == Performance.LOW)
@@ -79,7 +81,7 @@ namespace RTS
 			// Create base spawn
 			Headquarters spawn;
 			BuildingPrefab buildingPrefab;
-			m_res.prefabs.buildingPrefabs.TryGetValue("CONSTRUCTION_YARD", out buildingPrefab);
+			m_res.prefabs.buildingPrefabs.TryGetValue(0, out buildingPrefab);
 			spawn = (Headquarters)CreateBuilding(buildingPrefab, m_spawnPoints[0], Vector3.zero);
 			spawn.Finish();
 			Camera.main.GetComponent<CameraMovement>().SetPos(new Vector3(m_spawnPoints[0].x, m_spawnPoints[0].y + 50, m_spawnPoints[0].z - 30));
@@ -144,11 +146,27 @@ namespace RTS
 			
 			// Update Input
 			InputHandler.ProcessInput();
+
+			// Update Fog
+			m_fog.Update();
+			
 		}
 		// Draw interface.
 		public static void Draw()
 		{
 			UserInterface.Draw();
+			m_fog.Draw();
+			UserInterface.m_sidePanel.m_minimap.DrawIcons();
+
+			foreach (Unit unit in m_unitList)
+			{
+				unit.Draw();
+			}
+
+			foreach (Building building in m_buildingList)
+			{
+				building.Draw();
+			}
 
 			// Debug
 			if (CAS.m_debug)
@@ -230,7 +248,7 @@ namespace RTS
 		private static void SpawnDozer(Vector3 a_pos)
 		{
 			UnitPrefab unitPrefab;
-			m_res.prefabs.unitPrefabs.TryGetValue("BULLDOZER", out unitPrefab);
+			m_res.prefabs.unitPrefabs.TryGetValue(1, out unitPrefab);
 			UnitTemplate template = new UnitTemplate();
 			Unit newUnit = template.Load(unitPrefab, a_pos - new Vector3(15f, 0f, 15f), new Vector3(0f, 90f, 0f));
 			m_unitList.Add(newUnit);

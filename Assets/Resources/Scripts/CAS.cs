@@ -14,6 +14,7 @@ namespace RTS
 		private static int m_spacing;
 		public static bool m_debug;
 		private static List<Destination> m_destinations;
+		private static int m_unitCount;
 
 		public struct Destination
 		{
@@ -36,6 +37,7 @@ namespace RTS
 		public static void Init()
 		{
 			m_timeScale = 0f;
+			m_unitCount = 0;
 			m_destinations = new List<Destination>();
 
 			// Generate a list of A* nodes.
@@ -325,8 +327,19 @@ namespace RTS
 			Ray ray;
 			if (m_timeScale > m_fps)
 			{
-				foreach(Unit unit in Main.m_unitList)
+				// Calculate partial update rate
+				int unitIterations = Mathf.CeilToInt(((float)Main.m_unitList.Count)/10f);
+
+				for (int i = m_unitCount; i < m_unitCount + unitIterations; ++i)
 				{
+					++m_unitCount;
+					if (i == Main.m_unitList.Count)
+					{
+						m_unitCount = 0;
+						break;
+					}
+
+					Unit unit = Main.m_unitList[i];
 					if (unit.Moving())
 					{
 						// Check destination isn't blocked.
@@ -337,7 +350,6 @@ namespace RTS
 								ray = new Ray(unit.Position(), unit.GetDestinationDir(0));
 								if (Physics.Raycast(ray, unit.Radius() * 4, 1 << 10 | 1 << 11))
 								{
-									Debug.Log("Stopped");
 									unit.Stop();
 								}
 							}
@@ -390,7 +402,7 @@ namespace RTS
 				
 							if (!found)
 							{
-								Debug.Log("No path found.");
+								Debug.Log("Unit '" + unit.ID() + "' could not find path.");
 								unit.Stop();
 								return;
 							}

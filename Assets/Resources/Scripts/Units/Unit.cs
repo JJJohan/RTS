@@ -18,7 +18,7 @@ namespace RTS
 
 		public struct Properties
 		{
-			public string ID;
+			public int ID;
 			public string name;
 			public Vector3 pos;
 			public Vector3 rot;
@@ -86,6 +86,7 @@ namespace RTS
 		{
 			if (Moving())
 			{
+				m_position = m_gameObject.transform.position;
 				UpdateGuiPosition();
 				m_icon.Update(new Vector2(Position().x, Position().z));
 

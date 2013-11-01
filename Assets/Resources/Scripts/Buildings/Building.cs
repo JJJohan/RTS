@@ -7,7 +7,7 @@ namespace RTS
 	{
 		public struct Properties
 		{
-			public string ID;
+			public int ID;
 			public string name;
 			public int health;
 			public int power;

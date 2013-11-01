@@ -12,17 +12,20 @@ namespace RTS
 		private bool m_placeable;
 		private bool m_air;
 		private bool m_inRange;
+		private bool m_visible;
 		private Vector2 m_dims;
 		private Vector3[] m_points;
 		private bool m_copy = false;
 		public BuildingPrefab m_prefab;
 		List<Headquarters> m_headquarters;
 		private int m_collisions;
+		private float m_largest;
 
 		public bool Placeable()
 		{
-			return (m_placeable && !m_air && m_inRange);
+			return (m_placeable && !m_air && m_inRange && m_visible);
 		}
+
 		// Create ghost building.
 		public void Create(BuildingPrefab a_prefab)
 		{
@@ -35,6 +38,7 @@ namespace RTS
 			m_air = false;
 			m_inRange = true;
 			m_placeable = false;
+			m_visible = true;
 			m_collisions = 0;
 			
 			// Get list of headquarters buildings
@@ -61,6 +65,8 @@ namespace RTS
 			rigid.useGravity = false;
 			collider.isTrigger = true;
 			m_dims = new Vector2(collider.bounds.size.x / 2, collider.bounds.size.z / 2);
+			m_largest = m_dims.x;
+			if (m_dims.y > m_largest) m_largest = m_dims.y;
 			m_placeable = true;
 			
 			// Initialise bounding box.
@@ -109,9 +115,18 @@ namespace RTS
 					}
 				 }
 			}
+
+			// Check if building is in a visible area.
+			if (Main.m_fog != null)
+			{
+				if (Main.m_fog.Visible(transform.position, m_largest) != Fog.Visibility.VISIBLE)
+					m_visible = false;
+				else
+					m_visible = true;
+			}
 			
 			// Update building colour.
-			if (m_placeable && !m_air && m_inRange)
+			if (m_placeable && !m_air && m_inRange && m_visible)
 				renderer.material.color = new Color(1f, 1f, 1f, .5f);
 			else
 				renderer.material.color = new Color(1f, 0f, 0f, .5f);

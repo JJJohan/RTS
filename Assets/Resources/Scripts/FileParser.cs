@@ -10,16 +10,16 @@ namespace RTS
 {
 	public struct Prefabs
 	{
-		public Dictionary<string, BuildingPrefab> buildingPrefabs;
-		public Dictionary<string, UnitPrefab> unitPrefabs;
+		public Dictionary<int, BuildingPrefab> buildingPrefabs;
+		public Dictionary<int, UnitPrefab> unitPrefabs;
 	}
 
 	public struct BuildingPrefab
 	{
 		public struct Upgrade
 		{
-			public string ID;
 			public string name;
+			public int ID;
 			public int cost;
 			public int power;
 			public int health;
@@ -29,8 +29,8 @@ namespace RTS
 			public Texture2D texture;
 		}
 
-		public string ID;
 		public string name;
+		public int ID;
 		public int type;
 		public int menuID;
 		public int cost;
@@ -41,7 +41,7 @@ namespace RTS
 		public Mesh model;
 		public Texture2D texture;
 		public Texture2D cameo;
-		public List<string> techReqs;
+		public List<int> techReqs;
 		public List<Upgrade> techUpgrades;
 		public bool dataItem;
 		public int replace;
@@ -51,8 +51,9 @@ namespace RTS
 	{
 		public struct Upgrade
 		{
-			public string ID;
+
 			public string name;
+			public int ID;
 			public int cost;
 			public int health;
 			public int buildTime;
@@ -60,9 +61,9 @@ namespace RTS
 			public Texture2D texture;
 		}
 
-		public string ID;
 		public string name;
-		public string factory;
+		public int ID;
+		public int factory;
 		public int type;
 		public int menuID;
 		public int cost;
@@ -75,14 +76,23 @@ namespace RTS
 		public Mesh model;
 		public Texture2D texture;
 		public Texture2D cameo;
-		public List<string> techReqs;
+		public List<int> techReqs;
 		public List<Upgrade> techUpgrades;
 		public bool dataItem;
 	}
 
 	public static class FileParser
 	{
+		private struct PreHash
+		{
+			public string shortName;
+			public string factoryName;
+			public List<string> techReqs;
+		}
+
 		public static ZipFile m_dataFile;
+		private static int m_hash = 1;
+		private static Dictionary<int, PreHash> m_prehash = new Dictionary<int, PreHash>();
 
 		public static void ParseFiles()
 		{
@@ -106,6 +116,65 @@ namespace RTS
 				if (entry.FileName.EndsWith(".xml"))
 				{
 					ParseXML(entry.FileName, true);
+				}
+			}
+
+			ParseUnitHashes();
+		}
+
+		private static void ParseUnitHashes()
+		{
+			var unitList = Main.m_res.prefabs.unitPrefabs.ToList();
+			var buildingList = Main.m_res.prefabs.buildingPrefabs.ToList();
+			var prehashList = m_prehash.ToList();
+
+			// Update unit hashes
+			for (int i = 0 ; i < unitList.Count; ++i)
+			{
+				PreHash prehash;
+				UnitPrefab unit = unitList[i].Value;
+				m_prehash.TryGetValue(unit.ID, out prehash);
+				unit.factory = -1;
+
+				// Factory hash
+				for (int j = 0; j < prehashList.Count; ++j)
+				{
+					if (prehashList[j].Value.shortName == prehash.factoryName)
+					{
+						unit.factory = prehashList[j].Key;
+						break;
+					}
+				}
+
+				// Tech req hashes
+				for (int j = 0; j < prehash.techReqs.Count; ++j)
+				{
+					for (int k = 0; k < prehashList.Count; ++k)
+					{
+						if (prehash.techReqs[j] == prehashList[k].Value.shortName)
+							unit.techReqs.Add(prehashList[k].Key);
+					}
+				}
+
+				if (unit.factory == -1)
+					Logger.LogWarning("Unit '" + prehash.shortName + "' can not find factory '" + prehash.factoryName + "'!");
+			}
+
+			// Update building hashes
+			for (int i = 0 ; i < buildingList.Count; ++i)
+			{
+				PreHash prehash;
+				BuildingPrefab building = buildingList[i].Value;
+				m_prehash.TryGetValue(building.ID, out prehash);
+
+				// Tech req hashes
+				for (int j = 0; j < prehash.techReqs.Count; ++j)
+				{
+					for (int k = 0; k < prehashList.Count; ++k)
+					{
+						if (prehash.techReqs[j] == prehashList[k].Value.shortName)
+							building.techReqs.Add(prehashList[k].Key);
+					}
 				}
 			}
 		}
@@ -132,7 +201,10 @@ namespace RTS
 			
 			if (node == null)
 				goto XMLError;
-			
+
+			PreHash prehash = new PreHash();
+			prehash.techReqs = new List<string>();
+
 			if (node.Name == "Building")
 			{		   
 				// Name
@@ -142,19 +214,21 @@ namespace RTS
 				XmlNode attrib = attribs.GetNamedItem("ID");
 				if (attrib == null)
 					goto XMLError;
-				string ID = attrib.Value;
+				prehash.shortName = attrib.Value;
 				
 				// Duplicate check
-				if (Main.m_res.prefabs.buildingPrefabs.ContainsKey(ID))
+				foreach(PreHash pre in m_prehash.Values)
 				{
-					Debug.LogWarning("Prefab overwrite attempt detected - possible mod: " + ID);
-					return;
+					if (pre.shortName == prehash.shortName)
+					{
+						Logger.LogWarning("Prefab overwrite attempt detected - possible mod: " + prehash.shortName);
+						return;
+					}
 				}
 				
 				// Create prefab
 				BuildingPrefab prefab = new BuildingPrefab();
 				prefab.dataItem = a_zip;
-				prefab.ID = ID;
 				prefab.type = Building.Type.DEFAULT;
 				
 				// Properties
@@ -205,9 +279,10 @@ namespace RTS
 					  prefab.type = Building.Type.UNITFACTORY;
 				}
 				
-				// Tech	 
-				prefab.techReqs = new List<string>();
+				// Tech
+				prefab.techReqs = new List<int>();
 				prefab.techUpgrades = new List<BuildingPrefab.Upgrade>();
+
 				nodes = node.SelectNodes("Tech");
 				if (nodes.Count != 1)
 					goto XMLError;
@@ -232,9 +307,7 @@ namespace RTS
 					attrib = attribs.GetNamedItem("Value");
 					if (attrib == null)
 						goto XMLError;
-					if (prefab.techReqs == null)
-						prefab.techReqs = new List<string>();
-					prefab.techReqs.Add(attrib.Value);
+					prehash.techReqs.Add(attrib.Value);
 				}
 				
 				nodes = node.SelectNodes("Tech/Upgrade");
@@ -318,8 +391,13 @@ namespace RTS
 				prefab.cameo = LoadImage(attrib.Value, a_zip);
 				if (prefab.cameo == null)
 					goto XMLError;
-				
-				Main.m_res.prefabs.buildingPrefabs.Add(ID, prefab);
+
+				if (prehash.shortName == "CONSTRUCTION_YARD")
+					prefab.ID = 0;
+				else
+					prefab.ID = ++m_hash;
+				m_prehash.Add(prefab.ID, prehash);
+				Main.m_res.prefabs.buildingPrefabs.Add(prefab.ID, prefab);
 			}
 			else
 			{
@@ -330,19 +408,21 @@ namespace RTS
 				XmlNode attrib = attribs.GetNamedItem("ID");
 				if (attrib == null)
 					goto XMLError;
-				string ID = attrib.Value;
+				prehash.shortName = attrib.Value;
 				
 				// Duplicate check
-				if (Main.m_res.prefabs.buildingPrefabs.ContainsKey(ID))
+				foreach(PreHash pre in m_prehash.Values)
 				{
-					Debug.LogWarning("Prefab overwrite attempt detected - possible mod: " + ID);
-					return;
+					if (pre.shortName == prehash.shortName)
+					{
+						Logger.LogWarning("Prefab overwrite attempt detected - possible mod: " + prehash.shortName);
+						return;
+					}
 				}
 				
 				// Create prefab
 				UnitPrefab prefab = new UnitPrefab();
 				prefab.dataItem = a_zip;
-				prefab.ID = ID;
 				prefab.type = Unit.Type.TANK;
 				
 				// Properties
@@ -359,7 +439,7 @@ namespace RTS
 				attrib = attribs.GetNamedItem("Factory");
 				if (attrib == null)
 					goto XMLError;
-				prefab.factory = attrib.Value;
+				prehash.factoryName = attrib.Value;
 				attrib = attribs.GetNamedItem("MenuID");
 				if (attrib == null)
 					goto XMLError;
@@ -405,9 +485,9 @@ namespace RTS
 				  prefab.type = Unit.Type.TANK;
 
 				// Tech	 
-				prefab.techReqs = new List<string>();
+				prefab.techReqs = new List<int>();
 				prefab.techUpgrades = new List<UnitPrefab.Upgrade>();
-				
+
 				nodes = node.SelectNodes("Tech/TechReq");
 				foreach (XmlNode n in nodes)
 				{
@@ -417,9 +497,7 @@ namespace RTS
 					attrib = attribs.GetNamedItem("Value");
 					if (attrib == null)
 						goto XMLError;
-					if (prefab.techReqs == null)
-						prefab.techReqs = new List<string>();
-					prefab.techReqs.Add(attrib.Value);
+					prehash.techReqs.Add(attrib.Value);
 				}
 				
 				nodes = node.SelectNodes("Tech/Upgrade");
@@ -498,14 +576,19 @@ namespace RTS
 				prefab.cameo = LoadImage(attrib.Value, a_zip);
 				if (prefab.cameo == null)
 					goto XMLError;
-				
-				Main.m_res.prefabs.unitPrefabs.Add(ID, prefab);
+
+				if (prehash.shortName == "BULLDOZER")
+					prefab.ID = 1;
+				else
+					prefab.ID = ++m_hash;
+				m_prehash.Add(prefab.ID, prehash);
+				Main.m_res.prefabs.unitPrefabs.Add(prefab.ID, prefab);
 			}
 			
 			return;
 			
 			XMLError:
-			Debug.LogError("Invalid XML file: " + a_name);
+			Logger.LogError("Invalid XML file: " + a_name);
 		}
 
 		public static void Compress()
